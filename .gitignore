@@ -1,0 +1,14 @@
+### IDEA ###
+.idea/*
+*.iml
+*/target/*
+*/*.iml
+/.gradle/
+logs/
+.cursor/
+.claude/
+*.code-workspace
+
+# Maven
+target/
+target/*

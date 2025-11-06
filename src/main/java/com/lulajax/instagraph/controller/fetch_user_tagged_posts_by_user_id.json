@@ -1,0 +1,242 @@
+获取用户被标记的帖子
+{
+    "code": 200,
+    "request_id": "079126db-5784-44c7-8de3-57090d062a71",
+    "message": "Request successful. This request will incur a charge.",
+    "message_zh": "请求成功，本次请求将被计费。",
+    "support": "Discord: https://discord.gg/aMEAS8Xsvz",
+    "time": "2025-11-06 02:48:33",
+    "time_stamp": 1762426113,
+    "time_zone": "America/Los_Angeles",
+    "docs": "https://api.tikhub.io/#/Instagram-Web-And-APP-API/fetch_user_tagged_posts_by_user_id_api_v1_instagram_web_app_fetch_user_tagged_posts_by_user_id_get",
+    "cache_message": "This request will be cached. You can access the cached result directly using the URL below, valid for 24 hours. Accessing the cache will not incur additional charges.",
+    "cache_message_zh": "本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。",
+    "cache_url": "https://cache.tikhub.io/api/v1/cache/public/079126db-5784-44c7-8de3-57090d062a71?sign=378aff837a50562f593c8369ac693c25c4511e65b3951f2cc9c3f778835d0eaa",
+    "router": "/api/v1/instagram/web_app/fetch_user_tagged_posts_by_user_id",
+    "params": {
+        "user_id": "12036982745",
+        "count": "5",
+        "end_cursor": ""
+    },
+    "data": {
+        "data": {
+            "user": {
+                "edge_user_to_photos_of_you": {
+                    "count": 5,
+                    "page_info": {
+                        "has_next_page": true,
+                        "end_cursor": "QVFDazVENldnZmlfVWpRbTZJaE1JLTRoQVdtWXF2UHliS0lUWTMwVGw0TWdyTS1SOFJiSTVCdzZKTF8xRVpVZy0xS2hQRjZyVWg3blpEV25OMWZ3UWRlaQ=="
+                    },
+                    "edges": [
+                        {
+                            "node": {
+                                "id": "3383443011492606107",
+                                "__typename": "GraphVideo",
+                                "edge_media_to_caption": {
+                                    "edges": [
+                                        {
+                                            "node": {
+                                                "text": "벨리 공연 마무우리-⭐️"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "shortcode": "C70Z34hy3Cb",
+                                "edge_media_to_comment": {
+                                    "count": 0
+                                },
+                                "comments_disabled": false,
+                                "taken_at_timestamp": 1717558054,
+                                "dimensions": {
+                                    "height": 1333,
+                                    "width": 750
+                                },
+                                "display_url": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/503243379_1285991406279170_5667283205554572825_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=102&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=q3lzvTNCGMUQ7kNvwFP-4D7&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_Afh_-BmDnzmfegNpE73xjGL7lsP-yp537LnkkOhACxQmWA&oe=691263F8&_nc_sid=9fa07d",
+                                "edge_liked_by": {
+                                    "count": 97
+                                },
+                                "edge_media_preview_like": {
+                                    "count": -1
+                                },
+                                "owner": {
+                                    "id": "12036982745",
+                                    "username": "bogus_veneta"
+                                },
+                                "thumbnail_src": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/503243379_1285991406279170_5667283205554572825_n.jpg?stp=c0.280.720.720a_dst-jpg_e15_s640x640_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=102&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=q3lzvTNCGMUQ7kNvwFP-4D7&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_AfhTpGrr4Gc2qA5sJ4Np20tCo4IXQ-xExOSS_Z5SauUG2Q&oe=691263F8&_nc_sid=9fa07d",
+                                "is_video": true,
+                                "has_upcoming_event": false,
+                                "video_view_count": 1193,
+                                "product_type": "clips"
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": "3365512068450693873",
+                                "__typename": "GraphVideo",
+                                "edge_media_to_caption": {
+                                    "edges": [
+                                        {
+                                            "node": {
+                                                "text": "대기 중엔 역시 …더보기\n@solarkeem ❤️李冀勺\n@houseoflove.kr \n\n#voguing #voguingdance #vogue #부산보그 #보깅댄서"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "shortcode": "C60s2UfSzLx",
+                                "edge_media_to_comment": {
+                                    "count": 24
+                                },
+                                "comments_disabled": false,
+                                "taken_at_timestamp": 1715420553,
+                                "dimensions": {
+                                    "height": 1332,
+                                    "width": 750
+                                },
+                                "display_url": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/501145905_29742656368682704_5790621767393212176_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=104&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=tGZTiTnRcpUQ7kNvwGMu0zG&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_AfgcFDVmVdgeNp1mf_jH-O_t7yXSKPN1vW_C-3LL3QqBAg&oe=69123552&_nc_sid=9fa07d",
+                                "edge_liked_by": {
+                                    "count": 295
+                                },
+                                "edge_media_preview_like": {
+                                    "count": -1
+                                },
+                                "owner": {
+                                    "id": "12036982745",
+                                    "username": "bogus_veneta"
+                                },
+                                "thumbnail_src": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/501145905_29742656368682704_5790621767393212176_n.jpg?stp=c0.279.720.720a_dst-jpg_e15_s640x640_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=104&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=tGZTiTnRcpUQ7kNvwGMu0zG&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_AfiGVeLZW7TsTZq4lDYbETwR6FG_8BwGbu00sm7NRQuBIQ&oe=69123552&_nc_sid=9fa07d",
+                                "is_video": true,
+                                "has_upcoming_event": false,
+                                "video_view_count": 3866,
+                                "product_type": "clips"
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": "3316888700071023229",
+                                "__typename": "GraphSidecar",
+                                "edge_media_to_caption": {
+                                    "edges": [
+                                        {
+                                            "node": {
+                                                "text": "New Generation Ball \n@house_of_veneta.kr ⚔️ @thehouseofspicy \n\nGrand march \n @bogus_veneta & @fxxkinghotburnsxitzadu \n\n뉴제네레이션 볼에서 인포스탬프담당으로 와주신분들 맞이할 수 있어서 영광이었습니다! 자리해주신 모든 분들께 진심으로 감사합니다‍♀️"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "shortcode": "C4H9LL3PZJ9",
+                                "edge_media_to_comment": {
+                                    "count": 17
+                                },
+                                "comments_disabled": false,
+                                "taken_at_timestamp": 1709623967,
+                                "dimensions": {
+                                    "height": 391,
+                                    "width": 750
+                                },
+                                "display_url": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.29350-15/431359311_7346613812089711_4620838890563827982_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=107&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=MckqC1RAOQUQ7kNvwHKkGcj&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_AfhtlChFmRr_MphrMwd-ca-oAlE5QQdwNdpS-iuPPK1HBw&oe=691249E1&_nc_sid=9fa07d",
+                                "edge_liked_by": {
+                                    "count": 180
+                                },
+                                "edge_media_preview_like": {
+                                    "count": -1
+                                },
+                                "owner": {
+                                    "id": "12036982745",
+                                    "username": "bogus_veneta"
+                                },
+                                "thumbnail_src": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.29350-15/431359311_7346613812089711_4620838890563827982_n.jpg?stp=c172.0.376.376a_dst-jpg_e15_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=107&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=MckqC1RAOQUQ7kNvwHKkGcj&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_Afhaz2ldGXh1qR-cxqs5KWHJCjMAR8Wp5FEI8aoS7YxeNQ&oe=691249E1&_nc_sid=9fa07d",
+                                "is_video": false,
+                                "has_upcoming_event": false,
+                                "accessibility_caption": null
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": "3218150597551728290",
+                                "__typename": "GraphVideo",
+                                "edge_media_to_caption": {
+                                    "edges": [
+                                        {
+                                            "node": {
+                                                "text": "아침 한강 조으다-! ⛲️ 襤冀"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "shortcode": "CypKusAyCai",
+                                "edge_media_to_comment": {
+                                    "count": 10
+                                },
+                                "comments_disabled": false,
+                                "taken_at_timestamp": 1697853815,
+                                "dimensions": {
+                                    "height": 1333,
+                                    "width": 750
+                                },
+                                "display_url": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/500614128_1374861920215794_8450540420316080765_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=wBe578sVeMkQ7kNvwEuY-br&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_Afhzu7eadJOeHJS2rkOjDvFu2s-D89nPGaWCCuT3LR1gkA&oe=69124CAD&_nc_sid=9fa07d",
+                                "edge_liked_by": {
+                                    "count": 186
+                                },
+                                "edge_media_preview_like": {
+                                    "count": -1
+                                },
+                                "owner": {
+                                    "id": "12036982745",
+                                    "username": "bogus_veneta"
+                                },
+                                "thumbnail_src": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/500614128_1374861920215794_8450540420316080765_n.jpg?stp=c0.280.720.720a_dst-jpg_e15_s640x640_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=106&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=wBe578sVeMkQ7kNvwEuY-br&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_AfiUw7n54XyOkZ6-EBJXUnRvGGo0JNkHhHe7vqD5r-bh_w&oe=69124CAD&_nc_sid=9fa07d",
+                                "is_video": true,
+                                "has_upcoming_event": false,
+                                "video_view_count": 1392,
+                                "product_type": "clips"
+                            }
+                        },
+                        {
+                            "node": {
+                                "id": "3036549411653201357",
+                                "__typename": "GraphVideo",
+                                "edge_media_to_caption": {
+                                    "edges": [
+                                        {
+                                            "node": {
+                                                "text": "절대 후회 안시켜드립니다\n\n@_bogus.0 \n@11r_ing \n@dpqls__19 \n@ch__.an"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "shortcode": "Coj_ZoAgq3N",
+                                "edge_media_to_comment": {
+                                    "count": 28
+                                },
+                                "comments_disabled": false,
+                                "taken_at_timestamp": 1676205333,
+                                "dimensions": {
+                                    "height": 1332,
+                                    "width": 750
+                                },
+                                "display_url": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/501227722_1040623414867133_7911840346807784364_n.jpg?stp=dst-jpg_e15_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=8lYVdpYjFK0Q7kNvwHd6uFj&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_AfjgqeagZUauOCMSMKC50OH0KW-sDVn4-jmV9gttG_dZZA&oe=69124128&_nc_sid=9fa07d",
+                                "edge_liked_by": {
+                                    "count": 1695
+                                },
+                                "edge_media_preview_like": {
+                                    "count": -1
+                                },
+                                "owner": {
+                                    "id": "12036982745",
+                                    "username": "bogus_veneta"
+                                },
+                                "thumbnail_src": "https://instagram.fmil1-1.fna.fbcdn.net/v/t51.2885-15/501227722_1040623414867133_7911840346807784364_n.jpg?stp=c0.279.720.720a_dst-jpg_e15_s640x640_tt6&_nc_ht=instagram.fmil1-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2QFy7UD2ZBvgf9VZfomwC3GkYpGUqEuMntjG0VLXFIJZmB_egqOl3ssRHfk8MVWD4Ug&_nc_ohc=8lYVdpYjFK0Q7kNvwHd6uFj&_nc_gid=LNHa-LoYeOyFHByOXzoSAg&edm=ALdeuSgBAAAA&ccb=7-5&oh=00_AfhXKOdrvqErN8MLKvj_VlJ49t-qAaVIpu2v_72HxijgRw&oe=69124128&_nc_sid=9fa07d",
+                                "is_video": true,
+                                "has_upcoming_event": false,
+                                "video_view_count": 16742,
+                                "product_type": "clips"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "status": "ok",
+        "attempts": "9"
+    }
+}

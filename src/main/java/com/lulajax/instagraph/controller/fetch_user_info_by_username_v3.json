@@ -1,0 +1,33 @@
+根据用户名获取用户数据
+{
+    "code": 200,
+    "request_id": "0838948a-d38a-4b7b-955f-6c3aff9ba766",
+    "message": "Request successful. This request will incur a charge.",
+    "message_zh": "请求成功，本次请求将被计费。",
+    "support": "Discord: https://discord.gg/aMEAS8Xsvz",
+    "time": "2025-11-06 02:42:38",
+    "time_stamp": 1762425758,
+    "time_zone": "America/Los_Angeles",
+    "docs": "https://api.tikhub.io/#/Instagram-Web-And-APP-API/fetch_user_info_by_username_v3_api_v1_instagram_web_app_fetch_user_info_by_username_v3_get",
+    "cache_message": "This request will be cached. You can access the cached result directly using the URL below, valid for 24 hours. Accessing the cache will not incur additional charges.",
+    "cache_message_zh": "本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。",
+    "cache_url": "https://cache.tikhub.io/api/v1/cache/public/0838948a-d38a-4b7b-955f-6c3aff9ba766?sign=d89a35209740718ceb2c0db490b0af9529ce7fc4d894230c6bb47d537f189210",
+    "router": "/api/v1/instagram/web_app/fetch_user_info_by_username_v3",
+    "params": {
+        "username": "bogus_veneta"
+    },
+    "data": {
+        "data": {
+            "accounts_with_shared_followers": null,
+            "country": "South Korea",
+            "date_joined": "March 2019",
+            "date_joined_as_timestamp": 1551398400,
+            "date_verified": null,
+            "date_verified_as_timestamp": null,
+            "former_usernames": 7,
+            "id": 12036982745,
+            "is_verified": null,
+            "username": "bogus_veneta"
+        }
+    }
+}
