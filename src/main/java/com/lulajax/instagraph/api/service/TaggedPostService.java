@@ -1,0 +1,110 @@
+package com.lulajax.instagraph.api.service;
+
+import com.lulajax.instagraph.api.dto.TaggedPostResponse;
+import com.lulajax.instagraph.model.Blogger;
+import com.lulajax.instagraph.model.Post;
+import com.lulajax.instagraph.config.TikhubApiProperties;
+import com.lulajax.instagraph.repository.BloggerRepository;
+import com.lulajax.instagraph.repository.PostRepository;
+import com.lulajax.instagraph.util.HttpUtil;
+import com.lulajax.instagraph.util.JsonUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+@Service
+public class TaggedPostService {
+
+    private static final Logger logger = LoggerFactory.getLogger(TaggedPostService.class);
+
+    private final BloggerRepository bloggerRepository;
+    private final PostRepository postRepository;
+    private final TikhubApiProperties tikhubApiProperties;
+    private final PostInfoService postInfoService;
+
+    public TaggedPostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties, PostInfoService postInfoService) {
+        this.bloggerRepository = bloggerRepository;
+        this.postRepository = postRepository;
+        this.tikhubApiProperties = tikhubApiProperties;
+        this.postInfoService = postInfoService;
+    }
+
+    public TaggedPostResponse testParseUserTaggedPosts(String json) {
+        logger.info("开始测试解析用户被标记帖子列表JSON");
+        logger.debug("接收到的JSON: {}", json);
+        TaggedPostResponse response = JsonUtil.parseObject(json, TaggedPostResponse.class);
+        if (response != null) {
+            logger.info("JSON解析成功");
+        } else {
+            logger.warn("JSON解析失败或结果为空");
+        }
+        return response;
+    }
+
+    public void fetchUserTaggedPostsByUserId(Long userId) {
+        logger.info("开始获取用户 (ID: {}) 被标记的帖子列表", userId);
+        Blogger taggedBlogger = bloggerRepository.findByInstagramId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Blogger with Instagram ID " + userId + " not found."));
+
+        String url = tikhubApiProperties.getUrl().get("fetch-user-tagged-posts-by-user-id") + "?user_id=" + userId;
+        logger.debug("请求URL: {}", url);
+        String result = HttpUtil.createGet(url)
+                .header("x-rapidapi-host", tikhubApiProperties.getXRapidapiHost())
+                .header("x-rapidapi-key", tikhubApiProperties.getXRapidapiKey())
+                .execute()
+                .body();
+        logger.debug("API 响应: {}", result);
+
+        TaggedPostResponse response = JsonUtil.parseObject(result, TaggedPostResponse.class);
+
+        if (response != null && response.getData() != null && response.getData().getData() != null && response.getData().getData().getUser() != null &&
+                response.getData().getData().getUser().getEdgeUserToPhotosOfYou() != null) {
+
+            logger.info("成功获取到用户 {} 的 {} 个被标记的帖子", taggedBlogger.getUsername(), response.getData().getData().getUser().getEdgeUserToPhotosOfYou().getEdges().size());
+            for (TaggedPostResponse.TaggedPostEdge edge : response.getData().getData().getUser().getEdgeUserToPhotosOfYou().getEdges()) {
+                TaggedPostResponse.PostNode node = edge.getNode();
+                logger.debug("正在处理帖子 ID: {}", node.getId());
+
+                // Create or update the Post
+                Post post = postRepository.findById(node.getId()).orElse(new Post(node.getId()));
+                post.setShortcode(node.getShortcode());
+                post.setDisplayUrl(node.getDisplayUrl());
+                post.setVideo(node.isVideo());
+                post.setVideoViewCount(node.getVideoViewCount());
+                post.setTimestamp(node.getTakenAtTimestamp());
+                if (node.getEdgeMediaToCaption() != null && !node.getEdgeMediaToCaption().getEdges().isEmpty()) {
+                    post.setCaption(node.getEdgeMediaToCaption().getEdges().get(0).getNode().getText());
+                }
+                if (node.getEdgeLikedBy() != null) {
+                    post.setLikeCount(node.getEdgeLikedBy().getCount());
+                }
+                postRepository.save(post);
+
+                // 调用 PostInfoService 获取帖子详细信息
+                postInfoService.fetchPostInfoByPostId(node.getId());
+
+                // Create or update the post owner and link to the post
+                TaggedPostResponse.Owner ownerDto = node.getOwner();
+                logger.debug("处理帖子所有者: {}", ownerDto.getUsername());
+                Blogger owner = bloggerRepository.findByInstagramId(Long.parseLong(ownerDto.getId())).orElseGet(() -> {
+                    logger.info("帖子所有者 {} (ID: {}) 不在数据库中，将创建新记录", ownerDto.getUsername(), ownerDto.getId());
+                    Blogger newOwner = new Blogger(ownerDto.getUsername(), "default");
+                    newOwner.setInstagramId(Long.parseLong(ownerDto.getId()));
+                    return bloggerRepository.save(newOwner);
+                });
+                owner.getPosts().add(post);
+                post.setOwner(owner);
+                bloggerRepository.save(owner);
+                
+                // Link the tagged blogger to the post
+                post.getTaggedInUsers().add(taggedBlogger);
+                taggedBlogger.getTaggedInPosts().add(post);
+                postRepository.save(post);
+                bloggerRepository.save(taggedBlogger);
+            }
+            logger.info("用户 {} 被标记的帖子列表处理完毕", taggedBlogger.getUsername());
+        } else {
+            logger.warn("未能获取用户 (ID: {}) 被标记的帖子列表，或列表为空", userId);
+        }
+    }
+}

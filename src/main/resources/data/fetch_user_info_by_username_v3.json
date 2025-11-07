@@ -1,4 +1,8 @@
 根据用户名获取用户数据
+curl --location --request GET 'https://api.tikhub.io/api/v1/instagram/web_app/fetch_user_info_by_username_v3?username=instagram' \
+--header 'Authorization: Bearer mYMQe31v3HATsxIP2jexpkoE/T1Xo63Y681+nRXekVUG3GVTV+Vw50eGDA=='
+
+
 {
     "code": 200,
     "request_id": "0838948a-d38a-4b7b-955f-6c3aff9ba766",

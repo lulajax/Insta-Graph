@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaGraph - Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f4f4f4;
+            padding: 15px;
+            height: 100vh;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            color: #333;
+            display: block;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        .tab button.active {
+            background-color: #ccc;
+        }
+
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>InstaGraph</h2>
+    <ul>
+        <li><a href="#" onclick="showContent('bloggers')">博主列表</a></li>
+        <li><a href="#" onclick="showContent('analysis')">分析</a></li>
+    </ul>
+</div>
+
+<div class="content">
+    <div id="bloggers-content" style="display: block;">
+        <h3>添加/同步博主</h3>
+        <form id="add-blogger-form">
+            <label for="new-blogger-username">Blogger Username:</label>
+            <input type="text" id="new-blogger-username" name="new-blogger-username" required>
+            <button type="submit">添加并聚合</button>
+        </form>
+
+        <h3>博主列表</h3>
+        <table id="bloggers-table">
+            <thead>
+            <tr>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Bio</th>
+                <th>Instagram ID</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <div id="blogger-details" style="display: none;">
+            <hr>
+            <h3 id="selected-blogger-username"></h3>
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'Relations')">关系</button>
+                <button class="tablinks" onclick="openTab(event, 'Posts')">帖子</button>
+            </div>
+
+            <div id="Relations" class="tabcontent">
+                <h4>Followings</h4>
+                <table id="followings-table">
+                    <thead><tr><th>Username</th><th>Full Name</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+
+                <h4>Followers</h4>
+                <table id="followers-table">
+                    <thead><tr><th>Username</th><th>Full Name</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="Posts" class="tabcontent">
+                <h4>Posts</h4>
+                <table id="user-posts-table">
+                    <thead><tr><th>ID</th><th>Short Code</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="analysis-content" style="display: none;">
+        <h3>共性分析</h3>
+
+        <h4>共同关注分析</h4>
+        <form id="common-follows-form">
+            <label for="cf-project">Project:</label>
+            <input type="text" id="cf-project" name="project" value="busan_dancers" required>
+            <label for="cf-min-follows">Min Follows:</label>
+            <input type="number" id="cf-min-follows" name="min_follows" value="2" required>
+            <button type="submit">分析</button>
+        </form>
+        <table id="common-follows-table">
+            <thead><tr><th>Username</th><th>Count</th></tr></thead>
+            <tbody></tbody>
+        </table>
+
+        <hr>
+
+        <h4>共同标记分析</h4>
+        <form id="co-tagged-form">
+            <label for="ct-project">Project:</label>
+            <input type="text" id="ct-project" name="project" value="busan_dancers" required>
+            <label for="ct-min-co-tags">Min Co-tags:</label>
+            <input type="number" id="ct-min-co-tags" name="min_co_tags" value="2" required>
+            <button type="submit">分析</button>
+        </form>
+        <table id="co-tagged-table">
+            <thead><tr><th>Username</th><th>Count</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="update-content" style="display: none;">
+        <h3>更新资料</h3>
+        <form id="update-form">
+            <input type="hidden" id="username" name="username">
+            <label for="fullName">Full Name:</label><br>
+            <input type="text" id="fullName" name="fullName"><br>
+            <label for="bio">Bio:</label><br>
+            <textarea id="bio" name="bio"></textarea><br>
+            <label for="seedGroup">Seed Group:</label><br>
+            <input type="text" id="seedGroup" name="seedGroup"><br>
+            <button type="submit">保存</button>
+            <button type="button" onclick="showContent('bloggers')">取消</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+
+    // Initialize the default tab
+    document.addEventListener('DOMContentLoaded', function() {
+        if(document.getElementsByClassName("tablinks").length > 0) {
+            document.getElementsByClassName("tablinks")[0].click();
+        }
+    });
+
+    function showContent(contentId) {
+        document.getElementById('bloggers-content').style.display = 'none';
+        document.getElementById('analysis-content').style.display = 'none';
+        document.getElementById('update-content').style.display = 'none';
+        document.getElementById(contentId + '-content').style.display = 'block';
+
+        if (contentId === 'bloggers') {
+            fetchBloggers();
+        }
+    }
+
+    function fetchPosts() {
+        fetch('/api/posts')
+            .then(response => response.json())
+            .then(data => {
+                populateTable('posts-table', data, ['id', 'shortCode', 'timestamp']);
+            })
+            .catch(error => console.error('Error fetching posts:', error));
+    }
+
+    function fetchBloggers() {
+        fetch('/api/instagraph/bloggers')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#bloggers-table tbody');
+                tableBody.innerHTML = '';
+                data.forEach(blogger => {
+                    const row = `<tr>
+                        <td>${blogger.username}</td>
+                        <td>${blogger.fullName}</td>
+                        <td>${blogger.bio}</td>
+                        <td>${blogger.instagramId}</td>
+                        <td>
+                            <button onclick="updateBlogger('${blogger.username}')">更新</button>
+                            <button onclick="aggregateData('${blogger.username}')">同步</button>
+                            <button onclick="showBloggerDetails('${blogger.username}')">查看详情</button>
+                        </td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => console.error('Error fetching bloggers:', error));
+    }
+
+    function updateBlogger(username) {
+        showContent('update');
+        // Corrected path to match UserInfoController
+        fetch(`/api/instagraph/blogger/fetch/${username}`)
+            .then(response => response.json())
+            .then(blogger => {
+                document.getElementById('username').value = blogger.username;
+                document.getElementById('fullName').value = blogger.fullName;
+                document.getElementById('bio').value = blogger.bio;
+                document.getElementById('seedGroup').value = blogger.seedGroup;
+            })
+            .catch(error => console.error('Error fetching blogger:', error));
+    }
+
+    function aggregateData(username) {
+        alert('开始同步 ' + username + ' 的数据，这个过程可能需要一些时间。');
+        // Corrected path to match AggregationController
+        fetch(`/api/aggregate/fetch/${username}`, { method: 'POST' }) // Assuming POST is more appropriate for triggering an action
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('同步失败，状态码：' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(username + ' 的数据同步完成！');
+                console.log('Aggregation success:', data);
+                fetchBloggers(); // Refresh the blogger list
+            })
+            .catch(error => {
+                alert('同步 ' + username + ' 的数据时发生错误。');
+                console.error('Aggregation error:', error);
+            });
+    }
+
+    function showBloggerDetails(username) {
+        document.getElementById('blogger-details').style.display = 'block';
+        document.getElementById('selected-blogger-username').innerText = `详情: ${username}`;
+
+        // Corrected path to match UserInfoController
+        fetch(`/api/instagraph/blogger/fetch/${username}`)
+            .then(response => response.json())
+            .then(blogger => {
+                populateTable('followings-table', blogger.followings, ['username', 'fullName']);
+                populateTable('followers-table', blogger.followers, ['username', 'fullName']);
+                // Corrected property name from shortCode to shortcode
+                populateTable('user-posts-table', blogger.posts, ['id', 'shortcode']);
+
+                // Reset and open the first tab
+                if (document.getElementsByClassName("tablinks").length > 0) {
+                    document.getElementsByClassName("tablinks")[0].click();
+                }
+            })
+            .catch(error => console.error('Error fetching blogger details:', error));
+    }
+
+    function populateTable(tableId, data, columns) {
+        const tableBody = document.querySelector(`#${tableId} tbody`);
+        tableBody.innerHTML = '';
+        if (data) {
+            data.forEach(item => {
+                let row = '<tr>';
+                columns.forEach(col => {
+                    row += `<td>${item[col] || ''}</td>`;
+                });
+                row += '</tr>';
+                tableBody.innerHTML += row;
+            });
+        }
+    }
+
+    document.getElementById('add-blogger-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const username = document.getElementById('new-blogger-username').value;
+        if (!username) {
+            alert('请输入用户名！');
+            return;
+        }
+        
+        // The aggregation endpoint handles user creation and data fetching.
+        // No need to POST to a separate creation endpoint first.
+        aggregateData(username); 
+        document.getElementById('new-blogger-username').value = ''; // Clear input
+    });
+
+    document.getElementById('common-follows-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const project = document.getElementById('cf-project').value;
+        const minFollows = document.getElementById('cf-min-follows').value;
+        const url = `/api/instagraph/analysis/common-follows?project=${encodeURIComponent(project)}&min_follows=${encodeURIComponent(minFollows)}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                populateTable('common-follows-table', data, ['username', 'count']);
+            })
+            .catch(error => console.error('Error fetching common follows:', error));
+    });
+
+    document.getElementById('co-tagged-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const project = document.getElementById('ct-project').value;
+        const minCoTags = document.getElementById('ct-min-co-tags').value;
+        const url = `/api/instagraph/analysis/co-tagged?project=${encodeURIComponent(project)}&min_co_tags=${encodeURIComponent(minCoTags)}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                populateTable('co-tagged-table', data, ['username', 'count']);
+            })
+            .catch(error => console.error('Error fetching co-tagged:', error));
+    });
+
+    document.getElementById('update-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+        const fullName = document.getElementById('fullName').value;
+        const bio = document.getElementById('bio').value;
+        const seedGroup = document.getElementById('seedGroup').value;
+
+        const bloggerData = {
+            username: username,
+            fullName: fullName,
+            bio: bio,
+            seedGroup: seedGroup
+        };
+
+        // Corrected path to a more appropriate RESTful endpoint for updating.
+        // This endpoint needs to be implemented in the backend.
+        fetch('/api/instagraph/blogger', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(bloggerData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            showContent('bloggers');
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchBloggers();
+    });
+</script>
+
+</body>
+</html>

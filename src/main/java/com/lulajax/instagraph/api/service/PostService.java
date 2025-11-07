@@ -1,0 +1,127 @@
+package com.lulajax.instagraph.api.service;
+
+import com.lulajax.instagraph.api.dto.UserPostResponse;
+import com.lulajax.instagraph.model.Blogger;
+import com.lulajax.instagraph.model.Post;
+import com.lulajax.instagraph.config.TikhubApiProperties;
+import com.lulajax.instagraph.repository.BloggerRepository;
+import com.lulajax.instagraph.repository.PostRepository;
+import com.lulajax.instagraph.util.HttpUtil;
+import com.lulajax.instagraph.util.JsonUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import java.util.Optional;
+
+@Service
+public class PostService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PostService.class);
+
+    private final BloggerRepository bloggerRepository;
+    private final PostRepository postRepository;
+    private final TikhubApiProperties tikhubApiProperties;
+
+    public PostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties) {
+        this.bloggerRepository = bloggerRepository;
+        this.postRepository = postRepository;
+        this.tikhubApiProperties = tikhubApiProperties;
+    }
+
+    public UserPostResponse testParseUserPosts(String json) {
+        logger.info("开始测试解析用户帖子列表JSON");
+        logger.debug("接收到的JSON: {}", json);
+        UserPostResponse response = JsonUtil.parseObject(json, UserPostResponse.class);
+        if (response != null) {
+            logger.info("JSON解析成功");
+        } else {
+            logger.warn("JSON解析失败或结果为空");
+        }
+        return response;
+    }
+
+    public void fetchUserPostsByUserId(Long userId) {
+        logger.info("开始获取用户 (ID: {}) 的帖子列表", userId);
+        Optional<Blogger> bloggerOpt = bloggerRepository.findByInstagramId(userId);
+        if (bloggerOpt.isEmpty()) {
+            logger.error("未找到 Instagram ID 为 {} 的博主", userId);
+            throw new IllegalArgumentException("Blogger with Instagram ID " + userId + " not found.");
+        }
+        Blogger blogger = bloggerOpt.get();
+
+        String url = tikhubApiProperties.getUrl().get("fetch-user-posts-by-user-id") + "?user_id=" + userId;
+        logger.debug("请求URL: {}", url);
+
+        String result = HttpUtil.createGet(url)
+                .header("x-rapidapi-host", tikhubApiProperties.getXRapidapiHost())
+                .header("x-rapidapi-key", tikhubApiProperties.getXRapidapiKey())
+                .execute()
+                .body();
+        logger.debug("API 响应: {}", result);
+
+        UserPostResponse response = JsonUtil.parseObject(result, UserPostResponse.class);
+
+        if (response != null && response.getData() != null && response.getData().getData() != null && response.getData().getData().getUser() != null &&
+                response.getData().getData().getUser().getEdgeOwnerToTimelineMedia() != null) {
+            logger.info("成功获取到用户 {} 的 {} 个帖子信息", blogger.getUsername(), response.getData().getData().getUser().getEdgeOwnerToTimelineMedia().getEdges().size());
+
+            for (UserPostResponse.UserPostEdge edge : response.getData().getData().getUser().getEdgeOwnerToTimelineMedia().getEdges()) {
+                UserPostResponse.PostNode node = edge.getNode();
+                logger.debug("正在处理帖子 ID: {}", node.getId());
+                Post post = postRepository.findById(node.getId()).orElse(new Post(node.getId()));
+                post.setDisplayUrl(node.getDisplayUrl());
+                post.setVideo(node.isVideo());
+                if(node.getEdgeMediaToCaption() != null && !node.getEdgeMediaToCaption().getEdges().isEmpty()){
+                    post.setCaption(node.getEdgeMediaToCaption().getEdges().get(0).getNode().getText());
+                }
+
+                // Tagged Users
+                if(node.getEdgeMediaToTaggedUser() != null){
+                    logger.debug("帖子 {} 中有 {} 个被标记的用户", node.getId(), node.getEdgeMediaToTaggedUser().getEdges().size());
+                    for(UserPostResponse.TaggedUserEdge taggedUserEdge : node.getEdgeMediaToTaggedUser().getEdges()){
+                        UserPostResponse.TaggedUser userDto = taggedUserEdge.getNode().getUser();
+                        logger.debug("处理被标记用户: {}", userDto.getUsername());
+                        Blogger taggedBlogger = bloggerRepository.findByInstagramId(Long.parseLong(userDto.getId())).orElseGet(() -> {
+                            logger.info("被标记用户 {} (ID: {}) 不在数据库中，将创建新记录", userDto.getUsername(), userDto.getId());
+                            Blogger newBlogger = new Blogger(userDto.getUsername(), "default");
+                            newBlogger.setInstagramId(Long.parseLong(userDto.getId()));
+                            newBlogger.setFullName(userDto.getFullName());
+                            return bloggerRepository.save(newBlogger);
+                        });
+                        // Manually update both sides of the relationship
+                        post.getTaggedInUsers().add(taggedBlogger);
+                        taggedBlogger.getTaggedInPosts().add(post);
+                        bloggerRepository.save(taggedBlogger);
+                    }
+                }
+
+                // Liked By Users
+                if(node.getEdgeMediaPreviewLike() != null){
+                    logger.debug("帖子 {} 中有 {} 个点赞用户", node.getId(), node.getEdgeMediaPreviewLike().getEdges().size());
+                    for(UserPostResponse.LikedByEdge likedByEdge : node.getEdgeMediaPreviewLike().getEdges()){
+                        UserPostResponse.LikedByNode likedByNode = likedByEdge.getNode();
+                        logger.debug("处理点赞用户: {}", likedByNode.getUsername());
+                        Blogger liker = bloggerRepository.findByInstagramId(Long.parseLong(likedByNode.getId())).orElseGet(() -> {
+                            logger.info("点赞用户 {} (ID: {}) 不在数据库中，将创建新记录", likedByNode.getUsername(), likedByNode.getId());
+                            Blogger newLiker = new Blogger(likedByNode.getUsername(), "default");
+                            newLiker.setInstagramId(Long.parseLong(likedByNode.getId()));
+                            return bloggerRepository.save(newLiker);
+                        });
+                        // Manually update both sides of the relationship
+                        post.getLikedBy().add(liker);
+                        liker.getLikedPosts().add(post);
+                        bloggerRepository.save(liker);
+                    }
+                }
+                
+                postRepository.save(post);
+                blogger.getPosts().add(post);
+                post.setOwner(blogger);
+            }
+            bloggerRepository.save(blogger);
+            logger.info("用户 {} 的帖子列表处理完毕", blogger.getUsername());
+        } else {
+            logger.warn("未能获取用户 (ID: {}) 的帖子列表，或列表为空", userId);
+        }
+    }
+}

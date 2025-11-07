@@ -7,14 +7,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-@Node("Hashtag")
+@Node("Location")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Hashtag {
+public class Location {
 
     @Id
+    private String id;
+
+    @Property("name")
     private String name;
 
-}
+    @Property("slug")
+    private String slug;
 
+    @Property("address_json")
+    private String addressJson;
+
+    public Location(String id) {
+        this.id = id;
+    }
+}

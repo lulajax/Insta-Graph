@@ -1,4 +1,7 @@
 获取用户正在关注的用户
+curl --location --request GET 'https://api.tikhub.io/api/v1/instagram/web_app/fetch_user_following_by_username?username=instagram' \
+--header 'Authorization: Bearer mYMQe31v3HATsxIP2jexpkoE/T1Xo63Y681+nRXekVUG3GVTV+Vw50eGDA=='
+
 {
     "code": 200,
     "request_id": "70995082-72e7-4e31-8443-5cb778f8a1f4",

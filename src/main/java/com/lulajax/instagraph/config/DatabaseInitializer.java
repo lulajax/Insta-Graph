@@ -22,11 +22,14 @@ public class DatabaseInitializer {
     public void initializeDatabase() {
         LOGGER.info("Initializing database constraints and indexes...");
         try (Session session = driver.session()) {
-            session.run("CREATE CONSTRAINT blogger_username_pk IF NOT EXISTS FOR (b:Blogger) REQUIRE b.username IS NODE KEY;");
-            session.run("CREATE CONSTRAINT post_id_pk IF NOT EXISTS FOR (p:Post) REQUIRE p.post_id IS NODE KEY;");
-            session.run("CREATE CONSTRAINT hashtag_name_pk IF NOT EXISTS FOR (h:Hashtag) REQUIRE h.name IS NODE KEY;");
+            // Add a constraint to ensure usernames are unique for Blogger nodes
+            session.run("CREATE CONSTRAINT IF NOT EXISTS FOR (b:Blogger) REQUIRE b.username IS UNIQUE");
+            session.run("CREATE CONSTRAINT blogger_instagram_id_uk IF NOT EXISTS FOR (b:Blogger) REQUIRE b.instagram_id IS UNIQUE;");
+            session.run("CREATE CONSTRAINT post_pk IF NOT EXISTS FOR (p:Post) REQUIRE p.id IS UNIQUE;");
+            session.run("CREATE CONSTRAINT hashtag_name_pk IF NOT EXISTS FOR (h:Hashtag) REQUIRE h.name IS UNIQUE;");
+            session.run("CREATE CONSTRAINT location_id_pk IF NOT EXISTS FOR (l:Location) REQUIRE l.id IS UNIQUE;");
             session.run("CREATE INDEX blogger_seed_group_idx IF NOT EXISTS FOR (b:Blogger) ON (b.seed_group);");
-            LOGGER.info("Database initialization complete.");
+            LOGGER.info("Database initialization completed successfully.");
         } catch (Exception e) {
             LOGGER.error("Error during database initialization", e);
         }
