@@ -1,0 +1,19 @@
+spring.application.name=insta-graph
+spring.neo4j.uri=bolt://localhost:7687
+spring.neo4j.authentication.username=neo4j
+spring.neo4j.authentication.password=Passw0rd
+
+# Spring Data Neo4j feature flags
+# Use elementId() instead of the deprecated id() function for Neo4j 5 and later.
+spring.data.neo4j.use-element-id=true
+
+tikhub.api.x-rapidapi-host=instagram389.p.rapidapi.com
+tikhub.api.x-rapidapi-key=
+tikhub.api.url.fetch-user-following-by-username=https://instagram389.p.rapidapi.com/api/v1/instagram/web_app/fetch_user_following_by_username
+tikhub.api.url.fetch-post-info-by-post-id=https://instagram389.p.rapidapi.com/api/v1/instagram/web_app/fetch_post_info_by_post_id
+tikhub.api.url.fetch-user-posts-by-user-id=https://instagram389.p.rapidapi.com/api/v1/instagram/web_app/fetch_user_posts_by_user_id
+tikhub.api.url.fetch-user-tagged-posts-by-user-id=https://instagram389.p.rapidapi.com/api/v1/instagram/web_app/fetch_user_tagged_posts_by_user_id
+# tikhub.api.url.fetch-user-info-by-username-v3=https://instagram389.p.rapidapi.com/api/v1/instagram/web_app/fetch_user_info_by_username_v3
+tikhub.api.url.fetch-user-info-by-username-v2=https://instagram389.p.rapidapi.com/api/v1/instagram/web_app/fetch_user_info_by_username_v2
+
+spring.web.resources.static-locations=classpath:/static/
