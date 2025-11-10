@@ -7,6 +7,12 @@ spring.neo4j.authentication.password=Passw0rd
 # Use elementId() instead of the deprecated id() function for Neo4j 5 and later.
 spring.data.neo4j.use-element-id=true
 
+# 配置 Neo4j 通知日志级别
+# - deprecation: 已通过 Neo4jConfig 使用 NEO4J_5 方言解决，这里将剩余警告设为 ERROR 级别
+# - unrecognized: 当关系类型在数据库中不存在时的通知，设为 ERROR 避免控制台刷屏
+logging.level.org.springframework.data.neo4j.cypher.deprecation=ERROR
+logging.level.org.springframework.data.neo4j.cypher.unrecognized=ERROR
+
 tikhub.api.x-rapidapi-host=instagram389.p.rapidapi.com
 tikhub.api.x-rapidapi-key=
 tikhub.api.url.fetch-user-following-by-username=https://instagram389.p.rapidapi.com/api/v1/instagram/web_app/fetch_user_following_by_username
