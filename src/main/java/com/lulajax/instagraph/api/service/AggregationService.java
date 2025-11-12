@@ -39,9 +39,9 @@ public class AggregationService {
         logger.info("成功获取到用户 {} 的信息，Instagram ID: {}", username, userId);
 
         // 2. 获取并存储用户的关注列表
-        logger.info("正在获取 {} 的关注列表", username);
-        followingService.fetchUserFollowingByUsername(username);
-        logger.info("完成 {} 关注列表的获取", username);
+        // logger.info("正在获取 {} 的关注列表", username);
+        // followingService.fetchUserFollowingByUsername(username);
+        // logger.info("完成 {} 关注列表的获取", username);
 
         // 3. 获取并存储用户的帖子列表
         logger.info("正在获取用户 {} (ID: {}) 的帖子列表", username, userId);
