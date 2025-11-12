@@ -44,9 +44,9 @@ public class AggregationService {
         // logger.info("完成 {} 关注列表的获取", username);
 
         // 3. 获取并存储用户的帖子列表
-        logger.info("正在获取用户 {} (ID: {}) 的帖子列表", username, userId);
-        postService.fetchUserPostsByUserId(userId);
-        logger.info("完成用户 {} (ID: {}) 帖子列表的获取", username, userId);
+        // logger.info("正在获取用户 {} (ID: {}) 的帖子列表", username, userId);
+        // postService.fetchUserPostsByUserId(userId);
+        // logger.info("完成用户 {} (ID: {}) 帖子列表的获取", username, userId);
 
         // 4. 获取并存储用户被标记的帖子
         logger.info("正在获取用户 {} (ID: {}) 被标记的帖子", username, userId);
