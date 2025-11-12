@@ -29,8 +29,17 @@ public class AggregationService {
         logger.info("开始为用户 {} 聚合数据", username);
         // 1. 获取并更新博主信息
         logger.info("正在获取 {} 的用户信息", username);
-        Blogger blogger = userInfoService.fetchUserInfoByUsernameV3(username);
-
+        Blogger blogger = null;
+        try {
+            blogger = userInfoService.fetchUserInfoByUsernameV3(username);
+        } catch (Exception e) {
+            try {
+                blogger = userInfoService.fetchUserInfoByUsernameV2(username);
+            } catch (Exception e2) {
+                logger.error("无法获取用户 {} 的基本信息或 Instagram ID", username);
+                return null;
+            }
+        }
         if (blogger == null || blogger.getInstagramId() == null) {
             logger.error("无法获取用户 {} 的基本信息或 Instagram ID", username);
             return null;

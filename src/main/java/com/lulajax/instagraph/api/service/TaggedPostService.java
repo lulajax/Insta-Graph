@@ -80,8 +80,12 @@ public class TaggedPostService {
                 }
                 postRepository.save(post);
 
-                // 调用 PostInfoService 获取帖子详细信息
-                postInfoService.fetchPostInfoByPostId(node.getId());
+                try {
+                    // 调用 PostInfoService 获取帖子详细信息
+                    postInfoService.fetchPostInfoByPostId(node.getId());
+                } catch (Exception e) {
+                    logger.error("获取帖子 {} 详细信息失败: {}", node.getId(), e.getMessage());
+                }
 
                 // Create or update the post owner and link to the post
                 TaggedPostResponse.Owner ownerDto = node.getOwner();

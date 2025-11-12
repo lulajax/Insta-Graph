@@ -76,9 +76,14 @@ The application uses Neo4j to model Instagram relationships according to the req
 **Nodes:**
 - `:Blogger` - Instagram users with properties:
   - `username` (ID) - Instagram username (e.g., @username)
-  - `seed_group` (core property) - Project identifier (e.g., "busan_dancers"). If null, the blogger is newly discovered
+  - `seed_group` (legacy property) - Project identifier string (backward compatibility)
   - `instagram_id`, `full_name`, `bio`, `gender` - Profile information from Tikhub API
   - Additional metadata: `country`, `date_joined`, `is_verified`, etc.
+
+- `:SeedGroup` - Seed groups/projects for organizing analysis
+  - `name` (ID) - Group identifier (e.g., "busan_dancers")
+  - `description` - Group description
+  - `created_at`, `updated_at` - Timestamps
 
 - `:Post` - Instagram posts with properties:
   - `id` (ID) - Post unique identifier
@@ -95,6 +100,7 @@ The application uses Neo4j to model Instagram relationships according to the req
   - `name` (ID) - Hashtag name (e.g., "#부산댄스")
 
 **Relationships (all unidirectional):**
+- `:BELONGS_TO` - `(Blogger)-[:BELONGS_TO]->(SeedGroup)` - Blogger belongs to a seed group
 - `:FOLLOWS` - `(Blogger)-[:FOLLOWS]->(Blogger)` - Follower relationship
 - **`:TAGGED_IN`** - `(Post)-[:TAGGED_IN]->(Blogger)` - **Core relationship**: Post tags a Blogger (indicates strong real-world connection)
 - `:POSTED` - `(Blogger)-[:POSTED]->(Post)` - Blogger created a Post
@@ -104,6 +110,8 @@ The application uses Neo4j to model Instagram relationships according to the req
 
 **Design Notes:**
 - All relationships are **unidirectional** - Neo4j can efficiently traverse relationships in any direction, so bidirectional modeling is unnecessary and adds maintenance complexity
+- **Seed groups are now proper nodes** - Previously stored only as a string property, groups are now first-class entities with their own metadata
+- Bloggers maintain both `seed_group` (string) and `BELONGS_TO` relationship for backward compatibility and flexibility
 - The `seed_group` property organizes different analysis projects - bloggers with null `seed_group` are candidates for discovery
 - **`:TAGGED_IN` is the most critical relationship** - when multiple bloggers are tagged in the same post, it indicates strong community ties
 
@@ -141,11 +149,13 @@ These Cypher queries use the `seed_group` property to isolate different analysis
 
 **Controller Layer** (`com.lulajax.instagraph.controller` & `.api.controller`):
 - `InstaGraphController` - Manual data entry endpoints (add bloggers, posts, relationships)
+- `SeedGroupController` - Seed group management (CRUD operations)
 - `AggregationController` - Main data collection orchestrator
 - `UserInfoController`, `FollowingController`, `PostController`, `TaggedPostController`, `PostInfoController` - Individual Tikhub API endpoints
 
 **Service Layer** (`com.lulajax.instagraph.service` & `.api.service`):
 - `InstaGraphService` - Core graph operations and analysis queries
+- `SeedGroupService` - Seed group management (create, update, delete with validation)
 - `AggregationService` - Orchestrates multi-step data collection workflow:
   1. Fetch user info → 2. Fetch followings → 3. Fetch posts → 4. Fetch tagged posts
 - Individual service classes fetch from Tikhub API and persist to Neo4j
@@ -153,6 +163,7 @@ These Cypher queries use the `seed_group` property to isolate different analysis
 **Repository Layer** (`com.lulajax.instagraph.repository`):
 - Spring Data Neo4j repositories with custom Cypher queries
 - `BloggerRepository` contains the critical analysis queries
+- `SeedGroupRepository` manages seed group nodes and statistics
 
 **Model Layer** (`com.lulajax.instagraph.model`):
 - Neo4j node entities with Spring Data Neo4j annotations

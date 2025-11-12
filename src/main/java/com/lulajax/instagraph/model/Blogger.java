@@ -18,7 +18,7 @@ import java.util.Set;
 @Node("Blogger")
 @Getter
 @Setter
-@ToString(exclude = {"followings", "followers", "posts", "likedPosts", "taggedInPosts"})
+@ToString(exclude = {"followings", "followers", "posts", "likedPosts", "taggedInPosts", "belongsToGroup"})
 @AllArgsConstructor
 @NoArgsConstructor
 public class Blogger {
@@ -28,6 +28,10 @@ public class Blogger {
 
     @Property("seed_group")
     private String seedGroup;
+
+    // 分组关系：博主属于某个种子分组
+    @Relationship(type = "BELONGS_TO", direction = Relationship.Direction.OUTGOING)
+    private SeedGroup belongsToGroup;
 
     @Property("bio")
     private String bio;

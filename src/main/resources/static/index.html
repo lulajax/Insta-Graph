@@ -1,46 +1,290 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InstaGraph - Admin</title>
+    <title>Insta-Graph 社群分析器</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
             padding: 0;
-            display: flex;
+            box-sizing: border-box;
         }
 
-        .sidebar {
-            width: 200px;
-            background-color: #f4f4f4;
-            padding: 15px;
-            height: 100vh;
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --light-gray: #f3f4f6;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
-        .sidebar h2 {
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
             text-align: center;
+            color: var(--white);
+            margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease;
         }
 
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .sidebar ul li {
-            margin: 15px 0;
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
         }
 
-        .sidebar ul li a {
-            text-decoration: none;
-            color: #333;
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            border: 2px solid transparent;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: var(--white);
+            color: var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
             display: block;
         }
 
-        .content {
-            flex-grow: 1;
-            padding: 15px;
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .badge-success {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .badge-warning {
+            background: var(--warning);
+            color: var(--white);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn.loading {
+            position: relative;
+            color: transparent;
+            pointer-events: none;
+        }
+
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            color: var(--white);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--white);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.875rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--light-gray);
         }
 
         table {
@@ -48,374 +292,1615 @@
             border-collapse: collapse;
         }
 
-        th, td {
-            padding: 8px;
+        th {
+            background: var(--light-gray);
+            padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            font-weight: 600;
+            color: var(--dark);
         }
 
-        .tab {
-            overflow: hidden;
-            border: 1px solid #ccc;
-            background-color: #f1f1f1;
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--light-gray);
         }
 
-        .tab button {
-            background-color: inherit;
-            float: left;
-            border: none;
-            outline: none;
+        tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .project-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            padding: 20px;
+            border-radius: 12px;
             cursor: pointer;
-            padding: 14px 16px;
-            transition: 0.3s;
+            transition: all 0.3s ease;
         }
 
-        .tab button:hover {
-            background-color: #ddd;
+        .project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
         }
 
-        .tab button.active {
-            background-color: #ccc;
+        .project-card.selected {
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
         }
 
-        .tabcontent {
-            display: none;
+        .project-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .project-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .project-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .seed-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .seed-item {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 8px 16px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid var(--primary);
+        }
+
+        .seed-item .remove-btn {
+            background: var(--danger);
+            color: var(--white);
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .result-card {
+            background: var(--white);
+            border: 2px solid var(--light-gray);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .result-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .result-username {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .username-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .username-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .result-score {
+            background: var(--primary);
+            color: var(--white);
             padding: 6px 12px;
-            border: 1px solid #ccc;
-            border-top: none;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+
+        .loading-spinner {
+            border: 4px solid var(--light-gray);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .workflow-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--light-gray);
+            z-index: 0;
+        }
+
+        .workflow-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .workflow-step-circle {
+            width: 40px;
+            height: 40px;
+            background: var(--white);
+            border: 3px solid var(--light-gray);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--gray);
+        }
+
+        .workflow-step.active .workflow-step-circle {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .workflow-step.completed .workflow-step-circle {
+            border-color: var(--success);
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .workflow-step-label {
+            font-size: 0.875rem;
+            color: var(--gray);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Toast 通知样式 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 300px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            background: var(--white);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .toast.toast-success {
+            border-left-color: var(--success);
+        }
+
+        .toast.toast-error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.toast-warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+            font-size: 0.95rem;
+            color: var(--dark);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .toast-close:hover {
+            background: var(--light-gray);
+            color: var(--dark);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        /* 表格内下拉框样式优化 */
+        table .form-select {
+            padding: 6px 12px;
+            font-size: 0.875rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            background: var(--white);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        table .form-select:hover {
+            border-color: var(--primary);
+        }
+
+        table .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* 自定义确认对话框样式 */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .confirm-overlay.show {
+            display: flex;
+        }
+
+        .confirm-dialog {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 90%;
+            animation: slideInUp 0.3s ease;
+        }
+
+        .confirm-header {
+            padding: 24px 24px 16px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        .confirm-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .confirm-icon {
+            font-size: 1.5rem;
+        }
+
+        .confirm-body {
+            padding: 24px;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .confirm-footer {
+            padding: 16px 24px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .workflow-steps {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .workflow-steps::before {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Toast 通知容器 -->
+    <div class="toast-container" id="toast-container"></div>
 
-<div class="sidebar">
-    <h2>InstaGraph</h2>
-    <ul>
-        <li><a href="#" onclick="showContent('bloggers')">博主列表</a></li>
-        <li><a href="#" onclick="showContent('analysis')">分析</a></li>
-    </ul>
-</div>
-
-<div class="content">
-    <div id="bloggers-content" style="display: block;">
-        <h3>添加/同步博主</h3>
-        <form id="add-blogger-form">
-            <label for="new-blogger-username">Blogger Username:</label>
-            <input type="text" id="new-blogger-username" name="new-blogger-username" required>
-            <button type="submit">添加并聚合</button>
-        </form>
-
-        <h3>博主列表</h3>
-        <table id="bloggers-table">
-            <thead>
-            <tr>
-                <th>Username</th>
-                <th>Full Name</th>
-                <th>Bio</th>
-                <th>Instagram ID</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-
-        <div id="blogger-details" style="display: none;">
-            <hr>
-            <h3 id="selected-blogger-username"></h3>
-            <div class="tab">
-                <button class="tablinks" onclick="openTab(event, 'Relations')">关系</button>
-                <button class="tablinks" onclick="openTab(event, 'Posts')">帖子</button>
+    <!-- 自定义确认对话框 -->
+    <div class="confirm-overlay" id="confirm-overlay">
+        <div class="confirm-dialog">
+            <div class="confirm-header">
+                <div class="confirm-title">
+                    <span class="confirm-icon" id="confirm-icon">⚠️</span>
+                    <span id="confirm-title-text">确认操作</span>
+                </div>
             </div>
-
-            <div id="Relations" class="tabcontent">
-                <h4>Followings</h4>
-                <table id="followings-table">
-                    <thead><tr><th>Username</th><th>Full Name</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-
-                <h4>Followers</h4>
-                <table id="followers-table">
-                    <thead><tr><th>Username</th><th>Full Name</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+            <div class="confirm-body" id="confirm-message">
+                确定要执行此操作吗？
             </div>
-
-            <div id="Posts" class="tabcontent">
-                <h4>Posts</h4>
-                <table id="user-posts-table">
-                    <thead><tr><th>ID</th><th>Short Code</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+            <div class="confirm-footer">
+                <button class="btn btn-outline" id="confirm-cancel">取消</button>
+                <button class="btn btn-primary" id="confirm-ok">确定</button>
             </div>
         </div>
     </div>
 
-    <div id="analysis-content" style="display: none;">
-        <h3>共性分析</h3>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Insta-Graph 社群分析器</h1>
+            <p>通过共同标记关系，高效发现Instagram社群核心成员</p>
+        </div>
 
-        <h4>共同关注分析</h4>
-        <form id="common-follows-form">
-            <label for="cf-project">Project:</label>
-            <input type="text" id="cf-project" name="project" value="busan_dancers" required>
-            <label for="cf-min-follows">Min Follows:</label>
-            <input type="number" id="cf-min-follows" name="min_follows" value="2" required>
-            <button type="submit">分析</button>
-        </form>
-        <table id="common-follows-table">
-            <thead><tr><th>Username</th><th>Count</th></tr></thead>
-            <tbody></tbody>
-        </table>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('workflow')">🔄 工作流程</button>
+            <button class="nav-tab" onclick="switchTab('projects')">📁 分组管理</button>
+            <button class="nav-tab" onclick="switchTab('analysis')">📈 分析结果</button>
+            <button class="nav-tab" onclick="switchTab('data')">💾 数据管理</button>
+        </div>
 
-        <hr>
+        <!-- 工作流程标签页 -->
+        <div id="workflow-tab" class="tab-content active">
+            <div class="card">
+                <div class="workflow-steps">
+                    <div class="workflow-step active" id="step-1">
+                        <div class="workflow-step-circle">1</div>
+                        <div class="workflow-step-label">选择分组</div>
+                    </div>
+                    <div class="workflow-step" id="step-2">
+                        <div class="workflow-step-circle">2</div>
+                        <div class="workflow-step-label">添加种子</div>
+                    </div>
+                    <div class="workflow-step" id="step-3">
+                        <div class="workflow-step-circle">3</div>
+                        <div class="workflow-step-label">查看结果</div>
+                    </div>
+                </div>
 
-        <h4>共同标记分析</h4>
-        <form id="co-tagged-form">
-            <label for="ct-project">Project:</label>
-            <input type="text" id="ct-project" name="project" value="busan_dancers" required>
-            <label for="ct-min-co-tags">Min Co-tags:</label>
-            <input type="number" id="ct-min-co-tags" name="min_co_tags" value="2" required>
-            <button type="submit">分析</button>
-        </form>
-        <table id="co-tagged-table">
-            <thead><tr><th>Username</th><th>Count</th></tr></thead>
-            <tbody></tbody>
-        </table>
+                <div id="step-content-1" class="step-content">
+                    <div class="card-header">
+                        <h2 class="card-title">第一步：选择或创建分组</h2>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">当前分组</label>
+                        <select id="current-project" class="form-select" onchange="loadProjectSeeds()">
+                            <option value="">-- 选择分组 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">创建新分组</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="new-project-name" class="form-input" placeholder="例如：busan_dancers">
+                            <button class="btn btn-primary" onclick="createProject()">创建分组</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="activateStep(2)">下一步 →</button>
+                </div>
+
+                <div id="step-content-2" class="step-content" style="display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">第二步：添加种子博主</h2>
+                        <span class="badge badge-primary" id="seed-count">0 个种子</span>
+                    </div>
+                    <div class="alert alert-warning">
+                        💡 <strong>自动采集：</strong> 添加种子后，系统将自动采集该博主的关注列表、帖子和被标记数据
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Instagram 用户名</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="seed-username" class="form-input" placeholder="输入用户名（不含@）">
+                            <button class="btn btn-primary" onclick="addSeedBlogger()">添加种子</button>
+                        </div>
+                    </div>
+                    <div class="seed-list" id="seed-list"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-outline" onclick="activateStep(1)">← 上一步</button>
+                        <button class="btn btn-success" onclick="activateStep(3)">查看分析结果 →</button>
+                    </div>
+                </div>
+
+                <div id="step-content-3" class="step-content" style="display: none;">
+                    <div class="card-header">
+                        <h2 class="card-title">第三步：查看分析结果</h2>
+                    </div>
+                    <p style="text-align: center; color: var(--gray); padding: 40px;">
+                        点击下方按钮或切换到"分析结果"标签页查看发现的新博主
+                    </p>
+                    <div style="text-align: center;">
+                        <button class="btn btn-primary" onclick="switchTab('analysis', true)">前往分析结果页 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分组管理标签页 -->
+        <div id="projects-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📁 我的分组</h2>
+                    <button class="btn btn-primary btn-sm" onclick="switchTab('workflow')">+ 新建分组</button>
+                </div>
+                <div id="projects-list" class="grid grid-3">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📂</div>
+                        <p>暂无分组，请先创建一个分组</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分析结果标签页 -->
+        <div id="analysis-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📈 分析结果</h2>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">选择分组</label>
+                    <select id="analysis-project" class="form-select">
+                        <option value="">-- 选择要分析的分组 --</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">最小共同标记次数</label>
+                        <input type="number" id="min-co-tags" class="form-input" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">最小共同关注次数</label>
+                        <input type="number" id="min-follows" class="form-input" value="1" min="1">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="runCoTaggedAnalysis()">🔍 共同标记分析</button>
+                    <button class="btn btn-secondary" onclick="runCommonFollowsAnalysis()">👥 共同关注分析</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title" id="results-title">发现的博主</h2>
+                    <span class="badge badge-success" id="results-count">0 个结果</span>
+                </div>
+                <div id="analysis-results" class="grid grid-3">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>选择项目并运行分析以查看结果</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据管理标签页 -->
+        <div id="data-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💾 数据采集</h2>
+                </div>
+                <div class="alert alert-warning">
+                    ⚠️ <strong>说明：</strong> 自动采集博主的完整数据（关注列表、帖子、被标记帖子等）
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Instagram 用户名</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="aggregate-username" class="form-input" placeholder="输入用户名">
+                        <button class="btn btn-primary" id="aggregate-btn" onclick="aggregateUserData()">采集</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">所有博主</h2>
+                    <button class="btn btn-primary btn-sm" onclick="loadAllBloggers()">🔄 刷新</button>
+                </div>
+
+                <!-- 筛选表单 -->
+                <div class="grid grid-2" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">🔍 搜索用户名</label>
+                        <input type="text" id="filter-username" class="form-input" placeholder="输入用户名搜索..." oninput="filterBloggers()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📁 筛选分组</label>
+                        <select id="filter-group" class="form-select" onchange="filterBloggers()">
+                            <option value="">-- 所有分组 --</option>
+                            <option value="__NO_GROUP__">未分组</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span class="badge badge-primary" id="blogger-count">共 0 个博主</span>
+                    <span style="color: var(--gray); font-size: 0.875rem;" id="filter-info"></span>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>全名</th>
+                                <th>种子组</th>
+                                <th>Instagram ID</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bloggers-table-body">
+                            <tr>
+                                <td colspan="5" class="empty-state">暂无数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="update-content" style="display: none;">
-        <h3>更新资料</h3>
-        <form id="update-form">
-            <input type="hidden" id="username" name="username">
-            <label for="fullName">Full Name:</label><br>
-            <input type="text" id="fullName" name="fullName"><br>
-            <label for="bio">Bio:</label><br>
-            <textarea id="bio" name="bio"></textarea><br>
-            <label for="seedGroup">Seed Group:</label><br>
-            <input type="text" id="seedGroup" name="seedGroup"><br>
-            <button type="submit">保存</button>
-            <button type="button" onclick="showContent('bloggers')">取消</button>
-        </form>
-    </div>
-</div>
-
-<script>
-    function openTab(evt, tabName) {
-        var i, tabcontent, tablinks;
-        tabcontent = document.getElementsByClassName("tabcontent");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-        }
-        tablinks = document.getElementsByClassName("tablinks");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-        }
-        document.getElementById(tabName).style.display = "block";
-        evt.currentTarget.className += " active";
-    }
-
-    // Initialize the default tab
-    document.addEventListener('DOMContentLoaded', function() {
-        if(document.getElementsByClassName("tablinks").length > 0) {
-            document.getElementsByClassName("tablinks")[0].click();
-        }
-    });
-
-    function showContent(contentId) {
-        document.getElementById('bloggers-content').style.display = 'none';
-        document.getElementById('analysis-content').style.display = 'none';
-        document.getElementById('update-content').style.display = 'none';
-        document.getElementById(contentId + '-content').style.display = 'block';
-
-        if (contentId === 'bloggers') {
-            fetchBloggers();
-        }
-    }
-
-    function fetchPosts() {
-        fetch('/api/posts')
-            .then(response => response.json())
-            .then(data => {
-                populateTable('posts-table', data, ['id', 'shortCode', 'timestamp']);
-            })
-            .catch(error => console.error('Error fetching posts:', error));
-    }
-
-    function fetchBloggers() {
-        fetch('/api/instagraph/bloggers')
-            .then(response => response.json())
-            .then(data => {
-                const tableBody = document.querySelector('#bloggers-table tbody');
-                tableBody.innerHTML = '';
-                data.forEach(blogger => {
-                    const row = `<tr>
-                        <td>${blogger.username}</td>
-                        <td>${blogger.fullName}</td>
-                        <td>${blogger.bio}</td>
-                        <td>${blogger.instagramId}</td>
-                        <td>
-                            <button onclick="updateBlogger('${blogger.username}')">更新</button>
-                            <button onclick="aggregateData('${blogger.username}')">同步</button>
-                            <button onclick="showBloggerDetails('${blogger.username}')">查看详情</button>
-                        </td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            })
-            .catch(error => console.error('Error fetching bloggers:', error));
-    }
-
-    function updateBlogger(username) {
-        showContent('update');
-        // Corrected path to match UserInfoController
-        fetch(`/api/instagraph/blogger/fetch/${username}`)
-            .then(response => response.json())
-            .then(blogger => {
-                document.getElementById('username').value = blogger.username;
-                document.getElementById('fullName').value = blogger.fullName;
-                document.getElementById('bio').value = blogger.bio;
-                document.getElementById('seedGroup').value = blogger.seedGroup;
-            })
-            .catch(error => console.error('Error fetching blogger:', error));
-    }
-
-    function aggregateData(username) {
-        alert('开始同步 ' + username + ' 的数据，这个过程可能需要一些时间。');
-        // Corrected path to match AggregationController
-        fetch(`/api/aggregate/fetch/${username}`, { method: 'POST' }) // Assuming POST is more appropriate for triggering an action
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('同步失败，状态码：' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                alert(username + ' 的数据同步完成！');
-                console.log('Aggregation success:', data);
-                fetchBloggers(); // Refresh the blogger list
-            })
-            .catch(error => {
-                alert('同步 ' + username + ' 的数据时发生错误。');
-                console.error('Aggregation error:', error);
-            });
-    }
-
-    function showBloggerDetails(username) {
-        document.getElementById('blogger-details').style.display = 'block';
-        document.getElementById('selected-blogger-username').innerText = `详情: ${username}`;
-
-        // Corrected path to match UserInfoController
-        fetch(`/api/instagraph/blogger/fetch/${username}`)
-            .then(response => response.json())
-            .then(blogger => {
-                populateTable('followings-table', blogger.followings, ['username', 'fullName']);
-                populateTable('followers-table', blogger.followers, ['username', 'fullName']);
-                // Corrected property name from shortCode to shortcode
-                populateTable('user-posts-table', blogger.posts, ['id', 'shortcode']);
-
-                // Reset and open the first tab
-                if (document.getElementsByClassName("tablinks").length > 0) {
-                    document.getElementsByClassName("tablinks")[0].click();
-                }
-            })
-            .catch(error => console.error('Error fetching blogger details:', error));
-    }
-
-    function populateTable(tableId, data, columns) {
-        const tableBody = document.querySelector(`#${tableId} tbody`);
-        tableBody.innerHTML = '';
-        if (data) {
-            data.forEach(item => {
-                let row = '<tr>';
-                columns.forEach(col => {
-                    row += `<td>${item[col] || ''}</td>`;
-                });
-                row += '</tr>';
-                tableBody.innerHTML += row;
-            });
-        }
-    }
-
-    document.getElementById('add-blogger-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const username = document.getElementById('new-blogger-username').value;
-        if (!username) {
-            alert('请输入用户名！');
-            return;
-        }
-        
-        // The aggregation endpoint handles user creation and data fetching.
-        // No need to POST to a separate creation endpoint first.
-        aggregateData(username); 
-        document.getElementById('new-blogger-username').value = ''; // Clear input
-    });
-
-    document.getElementById('common-follows-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const project = document.getElementById('cf-project').value;
-        const minFollows = document.getElementById('cf-min-follows').value;
-        const url = `/api/instagraph/analysis/common-follows?project=${encodeURIComponent(project)}&min_follows=${encodeURIComponent(minFollows)}`;
-
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                populateTable('common-follows-table', data, ['username', 'count']);
-            })
-            .catch(error => console.error('Error fetching common follows:', error));
-    });
-
-    document.getElementById('co-tagged-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const project = document.getElementById('ct-project').value;
-        const minCoTags = document.getElementById('ct-min-co-tags').value;
-        const url = `/api/instagraph/analysis/co-tagged?project=${encodeURIComponent(project)}&min_co_tags=${encodeURIComponent(minCoTags)}`;
-
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                populateTable('co-tagged-table', data, ['username', 'count']);
-            })
-            .catch(error => console.error('Error fetching co-tagged:', error));
-    });
-
-    document.getElementById('update-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const username = document.getElementById('username').value;
-        const fullName = document.getElementById('fullName').value;
-        const bio = document.getElementById('bio').value;
-        const seedGroup = document.getElementById('seedGroup').value;
-
-        const bloggerData = {
-            username: username,
-            fullName: fullName,
-            bio: bio,
-            seedGroup: seedGroup
+    <script>
+        // 全局状态
+        const state = {
+            currentProject: null,
+            seedBloggers: [],
+            allProjects: new Set(),
+            allBloggers: [],  // 存储所有博主数据用于筛选
+            aggregatingUsers: new Set()  // 正在采集数据的用户名集合
         };
 
-        // Corrected path to a more appropriate RESTful endpoint for updating.
-        // This endpoint needs to be implemented in the backend.
-        fetch('/api/instagraph/blogger', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(bloggerData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            showContent('bloggers');
-        })
-        .catch((error) => {
-            console.error('Error:', error);
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllProjects();
+            loadAllBloggers();
         });
-    });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        fetchBloggers();
-    });
-</script>
+        // 标签页切换
+        function switchTab(tabName, project = null) {
+            // 移除所有active状态
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
+            // 设置对应的tab和content为active
+            const tabs = document.querySelectorAll('.nav-tab');
+            const tabNames = ['workflow', 'projects', 'analysis', 'data'];
+            const targetIndex = tabNames.indexOf(tabName);
+            if (targetIndex !== -1 && tabs[targetIndex]) {
+                tabs[targetIndex].classList.add('active');
+            }
+
+            const tabContent = document.getElementById(tabName + '-tab');
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // 特定标签页的初始化逻辑
+            if (tabName === 'analysis') {
+                populateAnalysisProjects();
+                // 如果传入了项目参数或当前有选中的项目，自动选中
+                if (project || state.currentProject) {
+                    const projectToSelect = state.currentProject;
+                    if (projectToSelect) {
+                        setTimeout(() => {
+                            document.getElementById('analysis-project').value = projectToSelect;
+                        }, 100);
+                    }
+                }
+            } else if (tabName === 'projects') {
+                renderProjectsList();
+            } else if (tabName === 'data') {
+                updateFilterGroupOptions();
+            }
+        }
+
+        // 工作流程步骤切换
+        function activateStep(stepNumber) {
+            if (stepNumber === 2 && !state.currentProject) {
+                showToast('请先选择或创建一个分组！', 'warning');
+                return;
+            }
+
+            // 更新步骤状态
+            for (let i = 1; i <= 3; i++) {
+                const stepEl = document.getElementById('step-' + i);
+                const contentEl = document.getElementById('step-content-' + i);
+
+                stepEl.classList.remove('active', 'completed');
+                contentEl.style.display = 'none';
+
+                if (i < stepNumber) {
+                    stepEl.classList.add('completed');
+                } else if (i === stepNumber) {
+                    stepEl.classList.add('active');
+                    contentEl.style.display = 'block';
+                }
+            }
+        }
+
+        // 创建分组
+        async function createProject() {
+            const projectName = document.getElementById('new-project-name').value.trim();
+            if (!projectName) {
+                showError('请输入分组名称！');
+                return;
+            }
+
+            try {
+                console.log('正在创建分组:', projectName);
+
+                // 调用后端API创建分组节点
+                const response = await fetch('/api/instagraph/groups', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: projectName,
+                        description: ''
+                    })
+                });
+
+                console.log('响应状态:', response.status);
+
+                if (!response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    let errorMessage = '创建失败';
+
+                    if (contentType && contentType.includes('application/json')) {
+                        const error = await response.json();
+                        errorMessage = error.error || error.message || '创建失败';
+                        console.error('错误详情:', error);
+                    } else {
+                        const text = await response.text();
+                        errorMessage = text || '创建失败';
+                        console.error('错误响应:', text);
+                    }
+
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                console.log('创建成功:', result);
+
+                state.currentProject = projectName;
+                state.allProjects.add(projectName);
+                state.seedBloggers = [];
+
+                updateProjectSelects();
+                document.getElementById('new-project-name').value = '';
+
+                showSuccess('分组 "' + projectName + '" 创建成功！');
+                renderProjectsList();  // 更新分组列表显示
+                activateStep(2);
+            } catch (error) {
+                console.error('创建分组失败:', error);
+                showError('创建分组失败：' + error.message);
+            }
+        }
+
+        // 添加种子博主
+        async function addSeedBlogger() {
+            const username = document.getElementById('seed-username').value.trim();
+            if (!username) {
+                showError('请输入用户名！');
+                return;
+            }
+
+            if (!state.currentProject) {
+                showToast('请先选择分组！', 'warning');
+                return;
+            }
+
+            try {
+                // 调用后端API添加博主
+                const response = await fetch('/api/instagraph/blogger', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        seedGroup: state.currentProject
+                    })
+                });
+
+                if (!response.ok) throw new Error('添加失败');
+
+                state.seedBloggers.push(username);
+                renderSeedList();
+                document.getElementById('seed-username').value = '';
+                showSuccess('种子博主 @' + username + ' 添加成功！');
+
+                // 自动采集新种子的数据
+                showToast('正在自动采集 @' + username + ' 的数据，这可能需要几分钟...', 'warning');
+
+                try {
+                    await aggregateUserData(username);
+                } catch (aggError) {
+                    // 采集失败不阻断流程，但显示错误信息
+                    console.error('自动采集数据失败:', aggError);
+                    showError('自动采集 @' + username + ' 的数据失败：' + (aggError.message || '未知错误'));
+                }
+            } catch (error) {
+                showError('添加种子博主失败：' + error.message);
+            }
+        }
+
+        // 渲染种子列表
+        function renderSeedList() {
+            const container = document.getElementById('seed-list');
+            const countEl = document.getElementById('seed-count');
+
+            countEl.textContent = state.seedBloggers.length + ' 个种子';
+
+            if (state.seedBloggers.length === 0) {
+                container.innerHTML = '<p style="color: var(--gray);">暂无种子博主，请添加</p>';
+                return;
+            }
+
+            container.innerHTML = state.seedBloggers.map(username => `
+                <div class="seed-item">
+                    <a href="https://www.instagram.com/${username}/" target="_blank" class="username-link" onclick="event.stopPropagation()">@${username}</a>
+                    <button class="remove-btn" onclick="removeSeed('${username}')">×</button>
+                </div>
+            `).join('');
+        }
+
+        // 移除种子
+        function removeSeed(username) {
+            state.seedBloggers = state.seedBloggers.filter(u => u !== username);
+            renderSeedList();
+        }
+
+        // 提交共同标记数据
+        async function submitCoTagData() {
+            const postId = document.getElementById('post-id').value.trim();
+            const taggedText = document.getElementById('tagged-usernames').value.trim();
+            const notes = document.getElementById('post-notes').value.trim();
+
+            if (!postId || !taggedText) {
+                showError('请填写帖子ID和被标记的用户名！');
+                return;
+            }
+
+            const taggedUsernames = taggedText.split('\n').map(u => u.trim()).filter(u => u);
+
+            try {
+                const response = await fetch('/api/instagraph/relationship/co_tag', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        postId: postId,
+                        taggedUsernames: taggedUsernames,
+                        postNotes: notes
+                    })
+                });
+
+                if (!response.ok) throw new Error('提交失败');
+
+                showSuccess('共同标记数据提交成功！');
+                document.getElementById('post-id').value = '';
+                document.getElementById('tagged-usernames').value = '';
+                document.getElementById('post-notes').value = '';
+            } catch (error) {
+                showError('提交失败：' + error.message);
+            }
+        }
+
+        // 运行共同标记分析
+        async function runCoTaggedAnalysis() {
+            const project = document.getElementById('analysis-project').value;
+            const minCoTags = document.getElementById('min-co-tags').value;
+
+            if (!project) {
+                showToast('请选择分组！', 'warning');
+                return;
+            }
+
+            showLoading('分析中...');
+
+            try {
+                const response = await fetch(
+                    `/api/instagraph/analysis/co-tagged?project=${encodeURIComponent(project)}&min_co_tags=${minCoTags}`
+                );
+                const data = await response.json();
+
+                document.getElementById('results-title').textContent = '共同标记分析结果';
+                renderAnalysisResults(data);
+            } catch (error) {
+                showError('分析失败：' + error.message);
+            }
+        }
+
+        // 运行共同关注分析
+        async function runCommonFollowsAnalysis() {
+            const project = document.getElementById('analysis-project').value;
+            const minFollows = document.getElementById('min-follows').value;
+
+            if (!project) {
+                showToast('请选择分组！', 'warning');
+                return;
+            }
+
+            showLoading('分析中...');
+
+            try {
+                const response = await fetch(
+                    `/api/instagraph/analysis/common-follows?project=${encodeURIComponent(project)}&min_follows=${minFollows}`
+                );
+                const data = await response.json();
+
+                document.getElementById('results-title').textContent = '共同关注分析结果';
+                renderAnalysisResults(data);
+            } catch (error) {
+                showError('分析失败：' + error.message);
+            }
+        }
+
+        // 渲染分析结果
+        function renderAnalysisResults(data) {
+            const container = document.getElementById('analysis-results');
+            const countEl = document.getElementById('results-count');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>未发现新博主</p>
+                    </div>
+                `;
+                countEl.textContent = '0 个结果';
+                return;
+            }
+
+            countEl.textContent = data.length + ' 个结果';
+
+            container.innerHTML = data.map(item => `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-username">
+                            <a href="https://www.instagram.com/${item.username}/" target="_blank" class="username-link" onclick="event.stopPropagation()">@${item.username}</a>
+                        </div>
+                        <div class="result-score">${item.count}</div>
+                    </div>
+                    <button class="btn btn-sm btn-success" onclick="promoteToSeed('${item.username}')" style="margin-top: 10px; width: 100%;">晋升为种子博主</button>
+                </div>
+            `).join('');
+        }
+
+        // 晋升为种子博主
+        async function promoteToSeed(username) {
+            if (!state.currentProject) {
+                const project = document.getElementById('analysis-project').value;
+                if (!project) {
+                    showToast('请先选择分组！', 'warning');
+                    return;
+                }
+                state.currentProject = project;
+            }
+
+            const confirmed = await showConfirm(
+                `确定要将 @${username} 晋升为种子博主吗？`,
+                '晋升种子博主',
+                '🌱'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/instagraph/blogger', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        seedGroup: state.currentProject
+                    })
+                });
+
+                if (!response.ok) throw new Error('晋升失败');
+
+                showSuccess('@' + username + ' 已晋升为种子博主！');
+
+                // 自动采集新种子的数据
+                showToast('正在自动采集 @' + username + ' 的数据，这可能需要几分钟...', 'warning');
+
+                try {
+                    await aggregateUserData(username);
+                } catch (aggError) {
+                    // 采集失败不阻断流程，但显示错误信息
+                    console.error('自动采集数据失败:', aggError);
+                    showError('自动采集 @' + username + ' 的数据失败：' + (aggError.message || '未知错误'));
+                }
+            } catch (error) {
+                showError('晋升失败：' + error.message);
+            }
+        }
+
+        // 采集用户数据
+        async function aggregateUserData(username) {
+            // 如果没有传参数，从输入框获取
+            if (!username) {
+                username = document.getElementById('aggregate-username').value.trim();
+            }
+
+            if (!username) {
+                showError('请输入用户名！');
+                return;
+            }
+
+            // 防止重复采集
+            if (state.aggregatingUsers.has(username)) {
+                showToast('该用户数据正在采集中，请稍候...', 'warning');
+                return;
+            }
+
+            // 标记为采集中
+            state.aggregatingUsers.add(username);
+
+            // 查找并禁用相关按钮
+            const syncBtn = document.getElementById('sync-btn-' + username);
+            const aggregateBtn = document.getElementById('aggregate-btn');
+
+            if (syncBtn) {
+                syncBtn.classList.add('loading');
+                syncBtn.disabled = true;
+            }
+            if (aggregateBtn) {
+                aggregateBtn.classList.add('loading');
+                aggregateBtn.disabled = true;
+            }
+
+            showToast('正在采集 @' + username + ' 的数据，这可能需要几分钟...', 'warning');
+
+            try {
+                const response = await fetch('/api/aggregate/' + username);
+                if (!response.ok) throw new Error('采集失败');
+
+                showSuccess('用户 @' + username + ' 的数据采集完成！');
+
+                // 清空输入框
+                const inputEl = document.getElementById('aggregate-username');
+                if (inputEl) {
+                    inputEl.value = '';
+                }
+
+                // 重新加载博主列表
+                loadAllBloggers();
+            } catch (error) {
+                showError('采集失败：' + error.message);
+            } finally {
+                // 移除采集中标记
+                state.aggregatingUsers.delete(username);
+
+                // 恢复按钮状态
+                if (syncBtn) {
+                    syncBtn.classList.remove('loading');
+                    syncBtn.disabled = false;
+                }
+                if (aggregateBtn) {
+                    aggregateBtn.classList.remove('loading');
+                    aggregateBtn.disabled = false;
+                }
+            }
+        }
+
+        // 更新博主分组
+        async function updateBloggerGroup(username, newGroup) {
+            try {
+                // 调用现有的 blogger API
+                const response = await fetch('/api/instagraph/blogger', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        seedGroup: newGroup || null
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('更新失败');
+                }
+
+                showSuccess(`已将 @${username} 的分组更新为 ${newGroup || '未分组'}`);
+
+                // 重新加载博主列表以反映更改
+                await loadAllBloggers();
+            } catch (error) {
+                showError('更新分组失败：' + error.message);
+                // 出错时重新加载以恢复下拉框状态
+                await loadAllBloggers();
+            }
+        }
+
+        // 删除博主
+        async function deleteBlogger(username) {
+            const confirmed = await showConfirm(
+                `确定要删除博主 @${username} 吗？<br><br>⚠️ 此操作将删除该博主及其所有关系，不可恢复！`,
+                '删除博主',
+                '🗑️'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/instagraph/blogger/${encodeURIComponent(username)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || '删除失败');
+                }
+
+                showSuccess(`博主 @${username} 已删除`);
+
+                // 重新加载博主列表
+                await loadAllBloggers();
+            } catch (error) {
+                showError('删除博主失败：' + error.message);
+            }
+        }
+
+        // 加载所有博主
+        async function loadAllBloggers() {
+            try {
+                const response = await fetch('/api/instagraph/bloggers');
+                const data = await response.json();
+
+                // 保存到全局状态
+                state.allBloggers = data || [];
+
+                // 更新分组筛选选项
+                updateFilterGroupOptions();
+
+                // 执行筛选显示
+                filterBloggers();
+            } catch (error) {
+                console.error('加载博主失败：', error);
+                state.allBloggers = [];
+                document.getElementById('bloggers-table-body').innerHTML =
+                    '<tr><td colspan="5" class="empty-state">加载失败</td></tr>';
+            }
+        }
+
+        // 更新筛选分组选项
+        function updateFilterGroupOptions() {
+            const select = document.getElementById('filter-group');
+            if (!select) return;
+
+            const currentValue = select.value;
+
+            // 重建选项
+            select.innerHTML = `
+                <option value="">-- 所有分组 --</option>
+                <option value="__NO_GROUP__">未分组</option>
+            `;
+
+            // 添加现有分组
+            Array.from(state.allProjects).forEach(group => {
+                const option = document.createElement('option');
+                option.value = group;
+                option.textContent = group;
+                if (group === currentValue) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+
+        // 筛选博主
+        function filterBloggers() {
+            const usernameFilter = document.getElementById('filter-username')?.value.toLowerCase().trim() || '';
+            const groupFilter = document.getElementById('filter-group')?.value || '';
+
+            let filtered = state.allBloggers;
+
+            // 按用户名筛选
+            if (usernameFilter) {
+                filtered = filtered.filter(b =>
+                    b.username.toLowerCase().includes(usernameFilter) ||
+                    (b.fullName && b.fullName.toLowerCase().includes(usernameFilter))
+                );
+            }
+
+            // 按分组筛选
+            if (groupFilter) {
+                if (groupFilter === '__NO_GROUP__') {
+                    // 未分组
+                    filtered = filtered.filter(b => !b.seedGroup);
+                } else {
+                    // 特定分组
+                    filtered = filtered.filter(b => b.seedGroup === groupFilter);
+                }
+            }
+
+            // 渲染结果
+            renderBloggersTable(filtered);
+
+            // 更新统计信息
+            updateBloggerStats(filtered.length, state.allBloggers.length, usernameFilter || groupFilter);
+        }
+
+        // 渲染博主表格
+        function renderBloggersTable(bloggers) {
+            const tbody = document.getElementById('bloggers-table-body');
+
+            if (!bloggers || bloggers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = bloggers.map(blogger => {
+                // 生成分组下拉选项
+                const groupOptions = `
+                    <option value="">-- 未分组 --</option>
+                    ${Array.from(state.allProjects).map(group =>
+                        `<option value="${group}" ${blogger.seedGroup === group ? 'selected' : ''}>${group}</option>`
+                    ).join('')}
+                `;
+
+                return `
+                    <tr>
+                        <td><a href="https://www.instagram.com/${blogger.username}/" target="_blank" class="username-link">@${blogger.username}</a></td>
+                        <td>${blogger.fullName || '-'}</td>
+                        <td>
+                            <select class="form-select" onchange="updateBloggerGroup('${blogger.username}', this.value)">
+                                ${groupOptions}
+                            </select>
+                        </td>
+                        <td>${blogger.instagramId || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" id="sync-btn-${blogger.username}" onclick="aggregateUserData('${blogger.username}')" style="margin-right: 5px;">同步</button>
+                            <button class="btn btn-sm" style="background: var(--danger); color: white;" onclick="deleteBlogger('${blogger.username}')">删除</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 更新统计信息
+        function updateBloggerStats(filteredCount, totalCount, isFiltered) {
+            const countEl = document.getElementById('blogger-count');
+            const infoEl = document.getElementById('filter-info');
+
+            if (!countEl || !infoEl) return;
+
+            if (isFiltered) {
+                countEl.textContent = `显示 ${filteredCount} 个博主`;
+                infoEl.textContent = `（共 ${totalCount} 个）`;
+            } else {
+                countEl.textContent = `共 ${totalCount} 个博主`;
+                infoEl.textContent = '';
+            }
+        }
+
+        // 加载所有分组
+        async function loadAllProjects() {
+            try {
+                // 从新的分组API加载
+                const response = await fetch('/api/instagraph/groups');
+                const groups = await response.json();
+
+                state.allProjects.clear();
+                groups.forEach(group => {
+                    state.allProjects.add(group.name);
+                });
+
+                // 同时也从博主中加载（兼容旧数据）
+                const bloggersResponse = await fetch('/api/instagraph/bloggers');
+                const bloggers = await bloggersResponse.json();
+
+                bloggers.forEach(blogger => {
+                    if (blogger.seedGroup) {
+                        state.allProjects.add(blogger.seedGroup);
+                    }
+                });
+
+                updateProjectSelects();
+            } catch (error) {
+                console.error('加载分组失败：', error);
+            }
+        }
+
+        // 更新项目选择框
+        function updateProjectSelects() {
+            const selects = [
+                document.getElementById('current-project'),
+                document.getElementById('analysis-project')
+            ];
+
+            selects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">-- 选择分组 --</option>';
+
+                Array.from(state.allProjects).forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project;
+                    option.textContent = project;
+                    if (project === currentValue) option.selected = true;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        // 填充分析项目列表
+        function populateAnalysisProjects() {
+            updateProjectSelects();
+        }
+
+        // 加载分组的种子博主
+        async function loadProjectSeeds() {
+            const project = document.getElementById('current-project').value;
+            if (!project) return;
+
+            state.currentProject = project;
+
+            try {
+                const response = await fetch('/api/instagraph/bloggers');
+                const data = await response.json();
+
+                state.seedBloggers = data
+                    .filter(b => b.seedGroup === project)
+                    .map(b => b.username);
+
+                renderSeedList();
+            } catch (error) {
+                console.error('加载种子失败：', error);
+            }
+        }
+
+        // 渲染分组列表
+        async function renderProjectsList() {
+            const container = document.getElementById('projects-list');
+
+            if (state.allProjects.size === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📂</div>
+                        <p>暂无分组，请先创建一个分组</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 获取每个分组的统计信息
+            try {
+                const response = await fetch('/api/instagraph/bloggers');
+                const allBloggers = await response.json();
+
+                const projectStats = {};
+                Array.from(state.allProjects).forEach(project => {
+                    projectStats[project] = allBloggers.filter(b => b.seedGroup === project).length;
+                });
+
+                container.innerHTML = Array.from(state.allProjects).map(project => `
+                    <div class="project-card" onclick="selectProject('${project}')">
+                        <div class="project-name">${project}</div>
+                        <div class="project-stats">
+                            <span>🌱 ${projectStats[project]} 个种子</span>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white;"
+                                    onclick="event.stopPropagation(); viewProjectAnalysis('${project}')">
+                                查看分析
+                            </button>
+                            ${projectStats[project] === 0 ? `
+                                <button class="btn btn-sm" style="background: var(--danger); color: white;"
+                                        onclick="event.stopPropagation(); deleteProject('${project}')">
+                                    删除
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('渲染分组列表失败：', error);
+            }
+        }
+
+        // 选择分组
+        function selectProject(projectName) {
+            state.currentProject = projectName;
+            document.getElementById('current-project').value = projectName;
+            loadProjectSeeds();
+            switchTab('workflow');
+            activateStep(2);
+        }
+
+        // 查看分组分析
+        function viewProjectAnalysis(projectName) {
+            document.getElementById('analysis-project').value = projectName;
+            switchTab('analysis');
+        }
+
+        // 删除分组
+        async function deleteProject(projectName) {
+            const confirmed = await showConfirm(
+                `确定要删除分组 "${projectName}" 吗？<br><br>⚠️ 此操作不可恢复！`,
+                '删除分组',
+                '🗑️'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                // 调用后端API删除分组
+                const response = await fetch(`/api/instagraph/groups/${encodeURIComponent(projectName)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || '删除失败');
+                }
+
+                // 从状态中删除
+                state.allProjects.delete(projectName);
+
+                // 如果当前选中的是被删除的分组，清空当前分组
+                if (state.currentProject === projectName) {
+                    state.currentProject = null;
+                    state.seedBloggers = [];
+                }
+
+                // 更新UI
+                updateProjectSelects();
+                renderProjectsList();
+
+                showSuccess(`分组 "${projectName}" 已删除`);
+            } catch (error) {
+                showError('删除分组失败：' + error.message);
+            }
+        }
+
+        // UI辅助函数
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || icons.success}</div>
+                <div class="toast-content">${message}</div>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+            `;
+
+            container.appendChild(toast);
+
+            // 自动移除
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function showConfirm(message, title = '确认操作', icon = '⚠️') {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('confirm-overlay');
+                const messageEl = document.getElementById('confirm-message');
+                const titleEl = document.getElementById('confirm-title-text');
+                const iconEl = document.getElementById('confirm-icon');
+                const okBtn = document.getElementById('confirm-ok');
+                const cancelBtn = document.getElementById('confirm-cancel');
+
+                // 设置内容
+                messageEl.innerHTML = message.replace(/\n/g, '<br>');
+                titleEl.textContent = title;
+                iconEl.textContent = icon;
+
+                // 显示对话框
+                overlay.classList.add('show');
+
+                // 处理确认
+                const handleOk = () => {
+                    cleanup();
+                    resolve(true);
+                };
+
+                // 处理取消
+                const handleCancel = () => {
+                    cleanup();
+                    resolve(false);
+                };
+
+                // 清理事件监听器
+                const cleanup = () => {
+                    overlay.classList.remove('show');
+                    okBtn.removeEventListener('click', handleOk);
+                    cancelBtn.removeEventListener('click', handleCancel);
+                    overlay.removeEventListener('click', handleOverlayClick);
+                };
+
+                // 点击遮罩层关闭
+                const handleOverlayClick = (e) => {
+                    if (e.target === overlay) {
+                        handleCancel();
+                    }
+                };
+
+                // 绑定事件
+                okBtn.addEventListener('click', handleOk);
+                cancelBtn.addEventListener('click', handleCancel);
+                overlay.addEventListener('click', handleOverlayClick);
+            });
+        }
+
+        function showLoading(message) {
+            // 可以添加加载动画
+            console.log('Loading:', message);
+        }
+
+        function showSuccess(message) {
+            showToast(message, 'success');
+        }
+
+        function showError(message) {
+            showToast(message, 'error');
+        }
+    </script>
 </body>
 </html>

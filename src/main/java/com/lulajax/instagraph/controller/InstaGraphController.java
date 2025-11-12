@@ -55,6 +55,17 @@ public class InstaGraphController {
         return ResponseEntity.ok(savedBlogger);
     }
 
+    @DeleteMapping("/blogger/{username}")
+    @Operation(summary = "删除博主", description = "删除指定用户名的博主及其所有关系。")
+    @Tag(name = "核心")
+    public ResponseEntity<?> deleteBlogger(@PathVariable String username) {
+        try {
+            instaGraphService.deleteBlogger(username);
+            return ResponseEntity.ok().body(java.util.Map.of("message", "博主 '" + username + "' 已删除"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
 
     @GetMapping("/analysis/common-follows")
     @Operation(summary = "共同关注分析", description = "查找被指定 `seed_group` 中的博主共同关注最多的“新博主”。")

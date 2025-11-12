@@ -27,7 +27,7 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
 
     @Query("""
         MATCH (seed:Blogger {seed_group: $project})
-        MATCH (seed)<-[:TAGGED_IN]-(post:Post)-[:TAGGED_IN]->(rec:Blogger)
+        MATCH (seed)-[:TAGGED_IN]->(post:Post)<-[:TAGGED_IN]-(rec:Blogger)
         WHERE rec.seed_group IS NULL OR rec.seed_group <> $project
         WITH rec, COUNT(DISTINCT post) AS common_post_count
         WHERE common_post_count >= $min_co_tags
