@@ -6,6 +6,7 @@ import com.lulajax.instagraph.model.Post;
 import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.repository.BloggerRepository;
 import com.lulajax.instagraph.repository.PostRepository;
+import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
 import org.slf4j.Logger;
@@ -21,12 +22,14 @@ public class TaggedPostService {
     private final PostRepository postRepository;
     private final TikhubApiProperties tikhubApiProperties;
     private final PostInfoService postInfoService;
+    private final BloggerService bloggerService;
 
-    public TaggedPostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties, PostInfoService postInfoService) {
+    public TaggedPostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties, PostInfoService postInfoService, BloggerService bloggerService) {
         this.bloggerRepository = bloggerRepository;
         this.postRepository = postRepository;
         this.tikhubApiProperties = tikhubApiProperties;
         this.postInfoService = postInfoService;
+        this.bloggerService = bloggerService;
     }
 
     public TaggedPostResponse testParseUserTaggedPosts(String json) {
@@ -90,12 +93,11 @@ public class TaggedPostService {
                 // Create or update the post owner and link to the post
                 TaggedPostResponse.Owner ownerDto = node.getOwner();
                 logger.debug("处理帖子所有者: {}", ownerDto.getUsername());
-                Blogger owner = bloggerRepository.findByInstagramId(Long.parseLong(ownerDto.getId())).orElseGet(() -> {
-                    logger.info("帖子所有者 {} (ID: {}) 不在数据库中，将创建新记录", ownerDto.getUsername(), ownerDto.getId());
-                    Blogger newOwner = new Blogger(ownerDto.getUsername(), "default");
-                    newOwner.setInstagramId(Long.parseLong(ownerDto.getId()));
-                    return bloggerRepository.save(newOwner);
-                });
+                Blogger owner = bloggerService.getOrCreateBloggerByInstagramId(
+                    Long.parseLong(ownerDto.getId()), 
+                    ownerDto.getUsername(), 
+                    "default"
+                );
                 owner.getPosts().add(post);
                 post.setOwner(owner);
                 bloggerRepository.save(owner);

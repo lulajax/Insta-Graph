@@ -5,6 +5,7 @@ import com.lulajax.instagraph.api.dto.UserInfoV3Response;
 import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.model.Blogger;
 import com.lulajax.instagraph.repository.BloggerRepository;
+import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
 import org.slf4j.Logger;
@@ -18,10 +19,12 @@ public class UserInfoService {
 
     private final BloggerRepository bloggerRepository;
     private final TikhubApiProperties tikhubApiProperties;
+    private final BloggerService bloggerService;
 
-    public UserInfoService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties) {
+    public UserInfoService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
         this.bloggerRepository = bloggerRepository;
         this.tikhubApiProperties = tikhubApiProperties;
+        this.bloggerService = bloggerService;
     }
 
     public UserInfoV3Response testParseUserInfoV3(String json) {
@@ -52,7 +55,7 @@ public class UserInfoService {
         if (response != null && response.getData() != null && response.getData().getData() != null) {
             logger.info("成功获取到用户 {} 的信息，正在更新数据库", username);
             UserInfoV3Response.UserInfoV3 userInfoV3 = response.getData().getData();
-            Blogger blogger = bloggerRepository.findById(username).orElse(new Blogger(username, "default"));
+            Blogger blogger = bloggerService.getOrCreateBlogger(username);
             blogger.setCountry(userInfoV3.getCountry());
             blogger.setDateJoined(userInfoV3.getDateJoined());
             blogger.setDateJoinedAsTimestamp(userInfoV3.getDateJoinedAsTimestamp());
@@ -87,7 +90,7 @@ public class UserInfoService {
         if (response != null && response.getData() != null) {
             logger.info("成功获取到用户 {} 的信息，正在更新数据库", username);
             UserInfoV2Response.UserInfoV2Data userInfoV2Data = response.getData();
-            Blogger blogger = bloggerRepository.findById(username).orElse(new Blogger(username, "default"));
+            Blogger blogger = bloggerService.getOrCreateBlogger(username);
 
             blogger.setFullName(userInfoV2Data.getFullName());
             blogger.setBio(userInfoV2Data.getBiography());

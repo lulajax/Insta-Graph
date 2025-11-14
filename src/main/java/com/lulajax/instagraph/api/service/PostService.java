@@ -6,6 +6,7 @@ import com.lulajax.instagraph.model.Post;
 import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.repository.BloggerRepository;
 import com.lulajax.instagraph.repository.PostRepository;
+import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
 import org.slf4j.Logger;
@@ -21,11 +22,13 @@ public class PostService {
     private final BloggerRepository bloggerRepository;
     private final PostRepository postRepository;
     private final TikhubApiProperties tikhubApiProperties;
+    private final BloggerService bloggerService;
 
-    public PostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties) {
+    public PostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
         this.bloggerRepository = bloggerRepository;
         this.postRepository = postRepository;
         this.tikhubApiProperties = tikhubApiProperties;
+        this.bloggerService = bloggerService;
     }
 
     public UserPostResponse testParseUserPosts(String json) {
@@ -81,13 +84,15 @@ public class PostService {
                     for(UserPostResponse.TaggedUserEdge taggedUserEdge : node.getEdgeMediaToTaggedUser().getEdges()){
                         UserPostResponse.TaggedUser userDto = taggedUserEdge.getNode().getUser();
                         logger.debug("处理被标记用户: {}", userDto.getUsername());
-                        Blogger taggedBlogger = bloggerRepository.findByInstagramId(Long.parseLong(userDto.getId())).orElseGet(() -> {
-                            logger.info("被标记用户 {} (ID: {}) 不在数据库中，将创建新记录", userDto.getUsername(), userDto.getId());
-                            Blogger newBlogger = new Blogger(userDto.getUsername(), "default");
-                            newBlogger.setInstagramId(Long.parseLong(userDto.getId()));
-                            newBlogger.setFullName(userDto.getFullName());
-                            return bloggerRepository.save(newBlogger);
-                        });
+                        Blogger taggedBlogger = bloggerService.getOrCreateBloggerByInstagramId(
+                            Long.parseLong(userDto.getId()), 
+                            userDto.getUsername(), 
+                            "default"
+                        );
+                        // 更新fullName
+                        if (userDto.getFullName() != null) {
+                            taggedBlogger.setFullName(userDto.getFullName());
+                        }
                         // Manually update both sides of the relationship
                         post.getTaggedInUsers().add(taggedBlogger);
                         taggedBlogger.getTaggedInPosts().add(post);
@@ -101,12 +106,11 @@ public class PostService {
                     for(UserPostResponse.LikedByEdge likedByEdge : node.getEdgeMediaPreviewLike().getEdges()){
                         UserPostResponse.LikedByNode likedByNode = likedByEdge.getNode();
                         logger.debug("处理点赞用户: {}", likedByNode.getUsername());
-                        Blogger liker = bloggerRepository.findByInstagramId(Long.parseLong(likedByNode.getId())).orElseGet(() -> {
-                            logger.info("点赞用户 {} (ID: {}) 不在数据库中，将创建新记录", likedByNode.getUsername(), likedByNode.getId());
-                            Blogger newLiker = new Blogger(likedByNode.getUsername(), "default");
-                            newLiker.setInstagramId(Long.parseLong(likedByNode.getId()));
-                            return bloggerRepository.save(newLiker);
-                        });
+                        Blogger liker = bloggerService.getOrCreateBloggerByInstagramId(
+                            Long.parseLong(likedByNode.getId()), 
+                            likedByNode.getUsername(), 
+                            "default"
+                        );
                         // Manually update both sides of the relationship
                         post.getLikedBy().add(liker);
                         liker.getLikedPosts().add(post);

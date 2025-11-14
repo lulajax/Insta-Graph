@@ -4,6 +4,7 @@ import com.lulajax.instagraph.api.dto.FollowingResponse;
 import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.model.Blogger;
 import com.lulajax.instagraph.repository.BloggerRepository;
+import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
 import org.slf4j.Logger;
@@ -19,10 +20,12 @@ public class FollowingService {
 
     private final BloggerRepository bloggerRepository;
     private final TikhubApiProperties tikhubApiProperties;
+    private final BloggerService bloggerService;
 
-    public FollowingService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties) {
+    public FollowingService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
         this.bloggerRepository = bloggerRepository;
         this.tikhubApiProperties = tikhubApiProperties;
+        this.bloggerService = bloggerService;
     }
 
     public FollowingResponse testParseUserFollowing(String json) {
@@ -52,22 +55,22 @@ public class FollowingService {
         FollowingResponse response = JsonUtil.parseObject(result, FollowingResponse.class);
         if (response != null && response.getData() != null && response.getData().getData() != null && response.getData().getData().getItems() != null) {
             logger.info("成功获取到 {} 的 {} 个关注用户信息", username, response.getData().getData().getItems().size());
-            Blogger follower = bloggerRepository.findById(username).orElseGet(() -> {
-                logger.info("用户 {} 不在数据库中，将创建新记录", username);
-                Blogger newBlogger = new Blogger(username, "default");
-                return bloggerRepository.save(newBlogger);
-            });
+            Blogger follower = bloggerService.getOrCreateBlogger(username);
 
             List<FollowingResponse.FollowingItem> items = response.getData().getData().getItems();
             for (FollowingResponse.FollowingItem item : items) {
-                Blogger followed = bloggerRepository.findById(item.getUsername()).orElseGet(() -> {
-                    logger.info("被关注者 {} 不在数据库中，将创建新记录", item.getUsername());
-                    Blogger newBlogger = new Blogger(item.getUsername(), "default");
-                    newBlogger.setFullName(item.getFullName());
-                    newBlogger.setIsVerified(item.getIsVerified());
-                    newBlogger.setInstagramId(Long.parseLong(item.getId()));
-                    return bloggerRepository.save(newBlogger);
-                });
+                Blogger followed = bloggerService.getOrCreateBloggerByInstagramId(
+                    Long.parseLong(item.getId()), 
+                    item.getUsername(), 
+                    "default"
+                );
+                // 更新额外信息
+                if (item.getFullName() != null) {
+                    followed.setFullName(item.getFullName());
+                }
+                if (item.getIsVerified() != null) {
+                    followed.setIsVerified(item.getIsVerified());
+                }
                 follower.getFollowings().add(followed);
                 followed.getFollowers().add(follower);
                 bloggerRepository.save(followed);

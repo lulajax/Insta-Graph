@@ -1,5 +1,6 @@
 package com.lulajax.instagraph.service;
 
+import com.lulajax.instagraph.dto.SeedGroupWithStats;
 import com.lulajax.instagraph.model.SeedGroup;
 import com.lulajax.instagraph.repository.SeedGroupRepository;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class SeedGroupService {
@@ -38,6 +40,25 @@ public class SeedGroupService {
      */
     public List<SeedGroup> getAllGroups() {
         return seedGroupRepository.findAll();
+    }
+
+    /**
+     * 获取所有分组及其统计信息
+     */
+    public List<SeedGroupWithStats> getAllGroupsWithStats() {
+        List<SeedGroup> groups = seedGroupRepository.findAll();
+        return groups.stream()
+                .map(group -> {
+                    long count = seedGroupRepository.countBloggers(group.getName());
+                    return new SeedGroupWithStats(
+                            group.getName(),
+                            group.getDescription(),
+                            group.getCreatedAt(),
+                            group.getUpdatedAt(),
+                            count
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     /**

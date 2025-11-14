@@ -1,5 +1,6 @@
 package com.lulajax.instagraph.controller;
 
+import com.lulajax.instagraph.dto.SeedGroupWithStats;
 import com.lulajax.instagraph.model.SeedGroup;
 import com.lulajax.instagraph.service.SeedGroupService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +41,12 @@ public class SeedGroupController {
     @Operation(summary = "获取所有分组", description = "获取所有种子分组列表")
     public ResponseEntity<List<SeedGroup>> getAllGroups() {
         return ResponseEntity.ok(seedGroupService.getAllGroups());
+    }
+
+    @GetMapping("/with-stats")
+    @Operation(summary = "获取所有分组及统计信息", description = "获取所有种子分组列表，包含每个分组下的博主数量")
+    public ResponseEntity<List<SeedGroupWithStats>> getAllGroupsWithStats() {
+        return ResponseEntity.ok(seedGroupService.getAllGroupsWithStats());
     }
 
     @GetMapping("/{name}")

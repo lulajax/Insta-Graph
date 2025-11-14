@@ -18,6 +18,7 @@
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
+            --info: #06b6d4;
             --dark: #1f2937;
             --gray: #6b7280;
             --light-gray: #f3f4f6;
@@ -739,6 +740,49 @@
             }
         }
 
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideInUp 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-actions {
+            padding: 16px 24px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -792,6 +836,10 @@
             <button class="nav-tab active" onclick="switchTab('workflow')">🔄 工作流程</button>
             <button class="nav-tab" onclick="switchTab('projects')">📁 分组管理</button>
             <button class="nav-tab" onclick="switchTab('analysis')">📈 分析结果</button>
+            <button class="nav-tab" onclick="switchTab('queue')" id="queue-tab-btn">
+                📋 任务队列
+                <span class="badge badge-warning" id="queue-badge" style="margin-left: 5px; display: none;">0</span>
+            </button>
             <button class="nav-tab" onclick="switchTab('data')">💾 数据管理</button>
         </div>
 
@@ -889,7 +937,11 @@
         <div id="analysis-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">📈 分析结果</h2>
+                    <h2 class="card-title">📈 智能社群分析</h2>
+                </div>
+
+                <div class="alert alert-warning" style="background: rgba(99, 102, 241, 0.1); border-color: var(--primary); color: var(--dark);">
+                    💡 <strong>双维度评分机制：</strong>系统会综合考虑覆盖人数（10分/人）和共同标记次数（5分/次），为您推荐最相关的社群成员。
                 </div>
 
                 <div class="form-group">
@@ -899,21 +951,29 @@
                     </select>
                 </div>
 
-                <div class="grid grid-2">
+                <div class="grid grid-3">
                     <div class="form-group">
                         <label class="form-label">最小共同标记次数</label>
-                        <input type="number" id="min-co-tags" class="form-input" value="1" min="1">
+                        <input type="number" id="min-co-tags" class="form-input" value="2" min="1">
+                        <small style="color: var(--gray); font-size: 0.875rem;">至少在几个帖子中被共同标记</small>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">最小共同关注次数</label>
-                        <input type="number" id="min-follows" class="form-input" value="1" min="1">
+                        <label class="form-label">最小种子覆盖人数</label>
+                        <input type="number" id="min-seed-count" class="form-input" value="2" min="1">
+                        <small style="color: var(--gray); font-size: 0.875rem;">至少与几个种子博主有连接</small>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary" onclick="runEnhancedAnalysis()" style="width: 100%;">🔍 开始智能分析</button>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-primary" onclick="runCoTaggedAnalysis()">🔍 共同标记分析</button>
-                    <button class="btn btn-secondary" onclick="runCommonFollowsAnalysis()">👥 共同关注分析</button>
-                </div>
+                <details style="margin-top: 15px; padding: 15px; background: var(--light-gray); border-radius: 8px;">
+                    <summary style="cursor: pointer; font-weight: 500; color: var(--dark);">⚙️ 参数说明</summary>
+                    <div style="margin-top: 10px; color: var(--gray); font-size: 0.9rem; line-height: 1.6;">
+                        <p><strong>最小共同标记次数：</strong>推荐博主至少要与种子博主在多少个不同的帖子中被共同标记</p>
+                        <p><strong>最小种子覆盖人数：</strong>推荐博主至少要与多少个种子博主有连接</p>
+                    </div>
+                </details>
             </div>
 
             <div class="card">
@@ -921,10 +981,80 @@
                     <h2 class="card-title" id="results-title">发现的博主</h2>
                     <span class="badge badge-success" id="results-count">0 个结果</span>
                 </div>
-                <div id="analysis-results" class="grid grid-3">
+                <div id="analysis-results" class="grid grid-2">
                     <div class="empty-state">
                         <div class="empty-state-icon">🔍</div>
-                        <p>选择项目并运行分析以查看结果</p>
+                        <p>选择分组并运行分析以查看结果</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 任务队列标签页 -->
+        <div id="queue-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💾 快速采集</h2>
+                </div>
+                <div class="alert alert-warning">
+                    ⚠️ <strong>说明：</strong> 输入用户名快速添加到采集队列
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Instagram 用户名</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="queue-aggregate-username" class="form-input" placeholder="输入用户名">
+                        <button class="btn btn-primary" onclick="aggregateUserDataFromQueue()">加入队列</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务队列管理 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📋 任务队列</h2>
+                    <button class="btn btn-primary btn-sm" onclick="loadQueueStatus()">🔄 刷新</button>
+                </div>
+
+                <div class="alert alert-warning" style="background: rgba(99, 102, 241, 0.1); border-color: var(--primary); color: var(--dark);">
+                    💡 <strong>说明：</strong>为防止API限流，系统同一时间只能执行一个采集任务。其他任务会自动排队等待。
+                </div>
+
+                <!-- 当前运行的任务 -->
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: var(--dark);">
+                        🚀 当前运行
+                    </h3>
+                    <div id="running-task-container">
+                        <div style="padding: 20px; text-align: center; color: var(--gray); background: var(--light-gray); border-radius: 8px;">
+                            暂无运行中的任务
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 待执行任务队列 -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="font-size: 1rem; font-weight: 600; color: var(--dark);">
+                            ⏳ 待执行队列
+                        </h3>
+                        <span class="badge badge-warning" id="pending-count">0 个任务</span>
+                    </div>
+                    <div id="pending-tasks-container">
+                        <div style="padding: 20px; text-align: center; color: var(--gray); background: var(--light-gray); border-radius: 8px;">
+                            队列为空
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近完成的任务 -->
+                <div>
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: var(--dark);">
+                        ✅ 最近完成
+                    </h3>
+                    <div id="completed-tasks-container">
+                        <div style="padding: 20px; text-align: center; color: var(--gray); background: var(--light-gray); border-radius: 8px;">
+                            暂无完成记录
+                        </div>
                     </div>
                 </div>
             </div>
@@ -932,22 +1062,6 @@
 
         <!-- 数据管理标签页 -->
         <div id="data-tab" class="tab-content">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">💾 数据采集</h2>
-                </div>
-                <div class="alert alert-warning">
-                    ⚠️ <strong>说明：</strong> 自动采集博主的完整数据（关注列表、帖子、被标记帖子等）
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Instagram 用户名</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="aggregate-username" class="form-input" placeholder="输入用户名">
-                        <button class="btn btn-primary" id="aggregate-btn" onclick="aggregateUserData()">采集</button>
-                    </div>
-                </div>
-            </div>
-
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">所有博主</h2>
@@ -971,7 +1085,15 @@
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <span class="badge badge-primary" id="blogger-count">共 0 个博主</span>
-                    <span style="color: var(--gray); font-size: 0.875rem;" id="filter-info"></span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="color: var(--gray); font-size: 0.875rem;" id="filter-info"></span>
+                        <select id="page-size" class="form-select" onchange="changePageSize()" style="width: auto; padding: 6px 12px;">
+                            <option value="10">10条/页</option>
+                            <option value="20" selected>20条/页</option>
+                            <option value="50">50条/页</option>
+                            <option value="100">100条/页</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="table-container">
@@ -980,17 +1102,33 @@
                             <tr>
                                 <th>用户名</th>
                                 <th>全名</th>
+                                <th>简介</th>
                                 <th>种子组</th>
+                                <th>状态</th>
                                 <th>Instagram ID</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="bloggers-table-body">
                             <tr>
-                                <td colspan="5" class="empty-state">暂无数据</td>
+                                <td colspan="7" class="empty-state">暂无数据</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- 分页控件 -->
+                <div id="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    <div style="color: var(--gray); font-size: 0.875rem;" id="page-info">
+                        显示第 1-20 条，共 0 条
+                    </div>
+                    <div style="display: flex; gap: 5px;" id="pagination-buttons">
+                        <button class="btn btn-sm btn-outline" onclick="goToPage(1)" id="first-page-btn" disabled>首页</button>
+                        <button class="btn btn-sm btn-outline" onclick="previousPage()" id="prev-page-btn" disabled>上一页</button>
+                        <div id="page-numbers" style="display: flex; gap: 5px;"></div>
+                        <button class="btn btn-sm btn-outline" onclick="nextPage()" id="next-page-btn">下一页</button>
+                        <button class="btn btn-sm btn-outline" onclick="goToLastPage()" id="last-page-btn">末页</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1002,14 +1140,23 @@
             currentProject: null,
             seedBloggers: [],
             allProjects: new Set(),
-            allBloggers: [],  // 存储所有博主数据用于筛选
-            aggregatingUsers: new Set()  // 正在采集数据的用户名集合
+            projectStats: {},  // 存储分组统计信息
+            queueRefreshInterval: null,  // 队列刷新定时器
+            // 分页相关（后端分页）
+            currentPage: 1,
+            pageSize: 20
         };
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             loadAllProjects();
             loadAllBloggers();
+            // 初始加载队列状态以显示badge
+            loadQueueStatus();
+            // 启动队列状态定时刷新（全局，每5秒刷新一次badge）
+            setInterval(() => {
+                loadQueueStatus();
+            }, 5000);
         });
 
         // 标签页切换
@@ -1020,7 +1167,7 @@
 
             // 设置对应的tab和content为active
             const tabs = document.querySelectorAll('.nav-tab');
-            const tabNames = ['workflow', 'projects', 'analysis', 'data'];
+            const tabNames = ['workflow', 'projects', 'analysis', 'queue', 'data'];
             const targetIndex = tabNames.indexOf(tabName);
             if (targetIndex !== -1 && tabs[targetIndex]) {
                 tabs[targetIndex].classList.add('active');
@@ -1045,8 +1192,22 @@
                 }
             } else if (tabName === 'projects') {
                 renderProjectsList();
+            } else if (tabName === 'queue') {
+                // 加载队列状态
+                loadQueueStatus();
+                // 启动自动刷新（每3秒刷新一次）
+                if (state.queueRefreshInterval) {
+                    clearInterval(state.queueRefreshInterval);
+                }
+                state.queueRefreshInterval = setInterval(loadQueueStatus, 3000);
             } else if (tabName === 'data') {
                 updateFilterGroupOptions();
+            }
+
+            // 离开任务队列标签页时，停止自动刷新
+            if (tabName !== 'queue' && state.queueRefreshInterval) {
+                clearInterval(state.queueRefreshInterval);
+                state.queueRefreshInterval = null;
             }
         }
 
@@ -1120,6 +1281,8 @@
                 state.currentProject = projectName;
                 state.allProjects.add(projectName);
                 state.seedBloggers = [];
+                // 初始化新分组的统计信息
+                state.projectStats[projectName] = { bloggerCount: 0 };
 
                 updateProjectSelects();
                 document.getElementById('new-project-name').value = '';
@@ -1147,6 +1310,35 @@
             }
 
             try {
+                // 检查博主状态
+                const status = await checkBloggerStatus(username);
+                
+                // 如果博主已被放弃，询问是否恢复
+                if (status && status.exists && status.abandoned) {
+                    const reasonText = status.abandonedReason ? `\n\n放弃原因：${status.abandonedReason}` : '';
+                    const confirmed = await showConfirm(
+                        `该博主已被标记为放弃状态。${reasonText}\n\n是否要恢复该博主并继续添加？`,
+                        '博主已放弃',
+                        '⚠️'
+                    );
+                    
+                    if (!confirmed) {
+                        return;
+                    }
+                    
+                    // 先恢复博主
+                    try {
+                        const restoreResponse = await fetch(`/api/instagraph/blogger/${username}/restore`, {
+                            method: 'PUT'
+                        });
+                        if (!restoreResponse.ok) throw new Error('恢复失败');
+                        showSuccess(`@${username} 已恢复！`);
+                    } catch (restoreError) {
+                        showError('恢复失败：' + restoreError.message);
+                        return;
+                    }
+                }
+
                 // 调用后端API添加博主
                 const response = await fetch('/api/instagraph/blogger', {
                     method: 'POST',
@@ -1160,7 +1352,16 @@
                 if (!response.ok) throw new Error('添加失败');
 
                 state.seedBloggers.push(username);
+                
+                // 更新分组统计信息
+                if (state.projectStats[state.currentProject]) {
+                    state.projectStats[state.currentProject].bloggerCount++;
+                } else {
+                    state.projectStats[state.currentProject] = { bloggerCount: 1 };
+                }
+                
                 renderSeedList();
+                updateProjectSelects();  // 更新下拉框显示
                 document.getElementById('seed-username').value = '';
                 showSuccess('种子博主 @' + username + ' 添加成功！');
 
@@ -1184,19 +1385,23 @@
             const container = document.getElementById('seed-list');
             const countEl = document.getElementById('seed-count');
 
-            countEl.textContent = state.seedBloggers.length + ' 个种子';
+            // 获取当前分组的种子数量
+            const currentProject = state.currentProject;
+            const stats = currentProject ? state.projectStats[currentProject] : null;
+            const totalSeeds = stats ? stats.bloggerCount : state.seedBloggers.length;
 
-            if (state.seedBloggers.length === 0) {
-                container.innerHTML = '<p style="color: var(--gray);">暂无种子博主，请添加</p>';
-                return;
+            countEl.textContent = totalSeeds + ' 个种子';
+
+            // 只显示种子数量统计，不显示详细列表
+            if (totalSeeds === 0) {
+                container.innerHTML = '<p style="color: var(--gray);">当前分组暂无种子博主</p>';
+            } else {
+                container.innerHTML = `<div style="padding: 20px; background: var(--light-gray); border-radius: 8px; text-align: center;">
+                    <div style="font-size: 2rem; color: var(--primary); margin-bottom: 10px;">🌱</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: var(--dark);">该分组已有 ${totalSeeds} 个种子博主</div>
+                    <div style="margin-top: 10px; color: var(--gray); font-size: 0.9rem;">您可以继续添加更多种子或直接查看分析结果</div>
+                </div>`;
             }
-
-            container.innerHTML = state.seedBloggers.map(username => `
-                <div class="seed-item">
-                    <a href="https://www.instagram.com/${username}/" target="_blank" class="username-link" onclick="event.stopPropagation()">@${username}</a>
-                    <button class="remove-btn" onclick="removeSeed('${username}')">×</button>
-                </div>
-            `).join('');
         }
 
         // 移除种子
@@ -1240,7 +1445,71 @@
             }
         }
 
-        // 运行共同标记分析
+        // 运行增强的共同标记分析
+        async function runEnhancedAnalysis() {
+            const project = document.getElementById('analysis-project').value;
+            const minCoTags = document.getElementById('min-co-tags').value;
+            const minSeedCount = parseInt(document.getElementById('min-seed-count').value);
+
+            if (!project) {
+                showToast('请选择分组！', 'warning');
+                return;
+            }
+
+            showLoading('智能分析中...');
+
+            try {
+                // 第一步：获取该项目的种子博主总数
+                const bloggersResponse = await fetch('/api/instagraph/bloggers');
+                const allBloggers = await bloggersResponse.json();
+                const seedBloggers = allBloggers.filter(b => b.seedGroup === project);
+                const totalSeeds = seedBloggers.length;
+
+                if (totalSeeds === 0) {
+                    showError('该分组暂无种子博主，请先添加种子！');
+                    return;
+                }
+
+                // 第二步：将人数转换为覆盖率
+                const minCoverage = minSeedCount / totalSeeds;
+
+                // 验证参数合理性
+                if (minSeedCount > totalSeeds) {
+                    showToast(`最小种子覆盖人数 (${minSeedCount}) 不能大于总种子数 (${totalSeeds})，已自动调整为 ${totalSeeds}`, 'warning');
+                    document.getElementById('min-seed-count').value = totalSeeds;
+                    return;
+                }
+
+                // 第三步：调用增强分析 API
+                const response = await fetch(
+                    `/api/instagraph/analysis/co-tagged-enhanced?project=${encodeURIComponent(project)}&min_co_tags=${minCoTags}&min_coverage=${minCoverage}`
+                );
+
+                if (!response.ok) {
+                    throw new Error('分析请求失败');
+                }
+
+                const data = await response.json();
+
+                // 更新结果标题，显示实际使用的参数
+                document.getElementById('results-title').textContent =
+                    `智能分析结果`;
+
+                renderEnhancedAnalysisResults(data);
+
+                // 显示分析成功提示
+                if (data.length > 0) {
+                    showSuccess(`分析完成！发现 ${data.length} 个推荐博主`);
+                } else {
+                    showToast('未发现符合条件的推荐博主，尝试降低筛选条件', 'warning');
+                }
+            } catch (error) {
+                showError('分析失败：' + error.message);
+                console.error('分析错误：', error);
+            }
+        }
+
+        // 运行共同标记分析（简单版，保留兼容）
         async function runCoTaggedAnalysis() {
             const project = document.getElementById('analysis-project').value;
             const minCoTags = document.getElementById('min-co-tags').value;
@@ -1265,7 +1534,7 @@
             }
         }
 
-        // 运行共同关注分析
+        // 运行共同关注分析（保留但不在新UI中使用）
         async function runCommonFollowsAnalysis() {
             const project = document.getElementById('analysis-project').value;
             const minFollows = document.getElementById('min-follows').value;
@@ -1288,6 +1557,130 @@
             } catch (error) {
                 showError('分析失败：' + error.message);
             }
+        }
+
+        // 渲染增强分析结果
+        function renderEnhancedAnalysisResults(data) {
+            const container = document.getElementById('analysis-results');
+            const countEl = document.getElementById('results-count');
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>未发现符合条件的新博主</p>
+                        <p style="font-size: 0.9rem; color: var(--gray); margin-top: 10px;">
+                            尝试降低"最小种子覆盖率"或"最小共同标记次数"参数
+                        </p>
+                    </div>
+                `;
+                countEl.textContent = '0 个结果';
+                return;
+            }
+
+            countEl.textContent = data.length + ' 个结果';
+
+            container.innerHTML = data.map((item, index) => {
+                const rank = index + 1;
+
+                // 计算各维度得分
+                const coverageScore = item.connectedSeeds * 10;
+                const coTagScore = item.coTaggedCount * 5;
+                const totalScore = item.compositeScore;
+
+                // 计算各维度占比
+                const coveragePercent = (coverageScore / totalScore * 100).toFixed(1);
+                const coTagPercent = (coTagScore / totalScore * 100).toFixed(1);
+
+                return `
+                    <div class="result-card" style="position: relative; overflow: visible;">
+                        <div style="position: relative; z-index: 1;">
+                            <!-- 头部：排名、用户名和综合评分 -->
+                            <div class="result-header" style="margin-bottom: 20px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">#${rank}</span>
+                                    <div>
+                                        <a href="https://www.instagram.com/${item.username}/" target="_blank"
+                                           class="username-link"
+                                           style="font-size: 1.1rem; font-weight: 600;"
+                                           onclick="event.stopPropagation()">@${item.username}</a>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.75rem; color: var(--gray); margin-bottom: 2px;">综合评分</div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                                        ${totalScore.toFixed(1)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 评分维度明细 -->
+                            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
+                                        padding: 15px; border-radius: 12px; margin-bottom: 15px;
+                                        border: 2px solid rgba(99, 102, 241, 0.2);">
+                                <div style="font-size: 0.875rem; font-weight: 600; color: var(--dark); margin-bottom: 8px;">
+                                    📊 评分明细
+                                </div>
+                                <!-- 覆盖人数得分 -->
+                                <div style="margin-bottom: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <span style="font-size: 0.8rem; color: var(--dark);">
+                                            🎯 <strong>覆盖人数</strong> (10分/人)
+                                        </span>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: var(--primary);">
+                                            ${coverageScore.toFixed(1)} 分
+                                        </span>
+                                    </div>
+                                    <div style="background: var(--light-gray); height: 8px; border-radius: 4px; overflow: hidden;">
+                                        <div style="background: linear-gradient(90deg, var(--primary), var(--secondary));
+                                                    height: 100%; width: ${coveragePercent}%; transition: width 0.3s ease;"></div>
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: var(--gray); margin-top: 2px;">
+                                        与 ${item.connectedSeeds} 个种子有连接
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: var(--primary); margin-top: 2px; font-family: 'Courier New', monospace;">
+                                        💡 计算：${item.connectedSeeds} 个 × 10 = ${coverageScore.toFixed(1)} 分
+                                    </div>
+                                </div>
+
+                                <!-- 共同标记得分 -->
+                                <div style="margin-bottom: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <span style="font-size: 0.8rem; color: var(--dark);">
+                                            📌 <strong>共同标记</strong> (5分/次)
+                                        </span>
+                                        <span style="font-size: 0.875rem; font-weight: 600; color: var(--success);">
+                                            ${coTagScore.toFixed(1)} 分
+                                        </span>
+                                    </div>
+                                    <div style="background: var(--light-gray); height: 8px; border-radius: 4px; overflow: hidden;">
+                                        <div style="background: linear-gradient(90deg, var(--success), #059669);
+                                                    height: 100%; width: ${coTagPercent}%; transition: width 0.3s ease;"></div>
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: var(--gray); margin-top: 2px;">
+                                        在 ${item.coTaggedCount} 个帖子中被共同标记
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: var(--success); margin-top: 2px; font-family: 'Courier New', monospace;">
+                                        💡 计算：${item.coTaggedCount} 次 × 5 = ${coTagScore.toFixed(1)} 分
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 操作按钮 -->
+                            <button class="btn btn-sm btn-success"
+                                    onclick="promoteToSeed('${item.username}')"
+                                    style="width: 100%; margin-bottom: 8px;">
+                                🌱 晋升为种子博主
+                            </button>
+                            <button class="btn btn-sm"
+                                    onclick="abandonBlogger('${item.username}')"
+                                    style="width: 100%; background: var(--warning); color: white;">
+                                ⛔ 放弃此博主
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // 渲染分析结果
@@ -1317,6 +1710,7 @@
                         <div class="result-score">${item.count}</div>
                     </div>
                     <button class="btn btn-sm btn-success" onclick="promoteToSeed('${item.username}')" style="margin-top: 10px; width: 100%;">晋升为种子博主</button>
+                    <button class="btn btn-sm" onclick="abandonBlogger('${item.username}')" style="margin-top: 8px; width: 100%; background: var(--warning); color: white;">⛔ 放弃此博主</button>
                 </div>
             `).join('');
         }
@@ -1371,6 +1765,136 @@
             }
         }
 
+        // 放弃博主
+        async function abandonBlogger(username) {
+            const reason = await showAbandonDialog(username);
+            
+            if (reason === null) {
+                // 用户取消了操作
+                return;
+            }
+
+            try {
+                const url = reason.trim() 
+                    ? `/api/instagraph/blogger/${username}/abandon?reason=${encodeURIComponent(reason)}`
+                    : `/api/instagraph/blogger/${username}/abandon`;
+                
+                const response = await fetch(url, {
+                    method: 'PUT'
+                });
+
+                if (!response.ok) throw new Error('放弃失败');
+
+                showSuccess(`@${username} 已标记为放弃状态！`);
+                
+                // 刷新当前的分析结果（如果在智能分析页面）
+                const analysisTypeEl = document.getElementById('analysis-type');
+                if (analysisTypeEl) {
+                    const analysisType = analysisTypeEl.value;
+                    if (analysisType === 'enhanced') {
+                        await runEnhancedCoTaggedAnalysis();
+                    } else if (analysisType === 'coTagged') {
+                        await runCoTaggedAnalysis();
+                    } else if (analysisType === 'commonFollows') {
+                        await runCommonFollowsAnalysis();
+                    }
+                }
+            } catch (error) {
+                showError('放弃失败：' + error.message);
+            }
+        }
+
+        // 恢复博主
+        async function restoreBlogger(username) {
+            const confirmed = await showConfirm(
+                `确定要恢复 @${username} 吗？\n恢复后该博主将重新出现在智能分析结果中。`,
+                '恢复博主',
+                '♻️'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/instagraph/blogger/${username}/restore`, {
+                    method: 'PUT'
+                });
+
+                if (!response.ok) throw new Error('恢复失败');
+
+                showSuccess(`@${username} 已恢复！`);
+                
+                // 刷新博主列表（如果在数据管理页面）
+                if (typeof loadBloggers === 'function') {
+                    await loadBloggers();
+                }
+            } catch (error) {
+                showError('恢复失败：' + error.message);
+            }
+        }
+
+        // 检查博主状态
+        async function checkBloggerStatus(username) {
+            try {
+                const response = await fetch(`/api/instagraph/blogger/${username}/status`);
+                if (!response.ok) throw new Error('检查状态失败');
+                return await response.json();
+            } catch (error) {
+                console.error('检查博主状态失败:', error);
+                return null;
+            }
+        }
+
+        // 显示放弃原因输入对话框
+        async function showAbandonDialog(username) {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 500px;">
+                        <div class="modal-header">
+                            <h3 style="margin: 0; color: var(--warning);">⛔ 放弃博主</h3>
+                        </div>
+                        <div class="modal-body">
+                            <p style="margin-bottom: 15px;">确定要放弃 <strong>@${username}</strong> 吗？</p>
+                            <p style="font-size: 0.9rem; color: var(--gray); margin-bottom: 15px;">
+                                放弃后，该博主将不再出现在智能分析结果中。您可以随时在数据管理页面恢复。
+                            </p>
+                            <label for="abandon-reason" style="display: block; margin-bottom: 5px; font-weight: 500;">
+                                放弃原因（可选）：
+                            </label>
+                            <textarea id="abandon-reason" 
+                                      rows="3" 
+                                      placeholder="例如：内容不符合项目定位、已联系无回应等..."
+                                      style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit;"></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove(); window.abandonDialogResolve(null);">
+                                取消
+                            </button>
+                            <button class="btn" style="background: var(--warning); color: white;" 
+                                    onclick="
+                                        const reason = document.getElementById('abandon-reason').value;
+                                        this.closest('.modal-overlay').remove(); 
+                                        window.abandonDialogResolve(reason);
+                                    ">
+                                确定放弃
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                window.abandonDialogResolve = resolve;
+                document.body.appendChild(modal);
+                
+                // 聚焦到输入框
+                setTimeout(() => {
+                    document.getElementById('abandon-reason')?.focus();
+                }, 100);
+            });
+        }
+
         // 采集用户数据
         async function aggregateUserData(username) {
             // 如果没有传参数，从输入框获取
@@ -1383,35 +1907,47 @@
                 return;
             }
 
-            // 防止重复采集
-            if (state.aggregatingUsers.has(username)) {
-                showToast('该用户数据正在采集中，请稍候...', 'warning');
-                return;
-            }
-
-            // 标记为采集中
-            state.aggregatingUsers.add(username);
-
-            // 查找并禁用相关按钮
-            const syncBtn = document.getElementById('sync-btn-' + username);
-            const aggregateBtn = document.getElementById('aggregate-btn');
-
-            if (syncBtn) {
-                syncBtn.classList.add('loading');
-                syncBtn.disabled = true;
-            }
-            if (aggregateBtn) {
-                aggregateBtn.classList.add('loading');
-                aggregateBtn.disabled = true;
-            }
-
-            showToast('正在采集 @' + username + ' 的数据，这可能需要几分钟...', 'warning');
-
             try {
-                const response = await fetch('/api/aggregate/' + username);
-                if (!response.ok) throw new Error('采集失败');
+                // 检查博主状态
+                const status = await checkBloggerStatus(username);
+                
+                // 如果博主已被放弃，询问是否恢复
+                if (status && status.exists && status.abandoned) {
+                    const reasonText = status.abandonedReason ? `\n\n放弃原因：${status.abandonedReason}` : '';
+                    const confirmed = await showConfirm(
+                        `该博主已被标记为放弃状态。${reasonText}\n\n是否要恢复该博主并继续采集？`,
+                        '博主已放弃',
+                        '⚠️'
+                    );
+                    
+                    if (!confirmed) {
+                        return;
+                    }
+                    
+                    // 先恢复博主
+                    try {
+                        const restoreResponse = await fetch(`/api/instagraph/blogger/${username}/restore`, {
+                            method: 'PUT'
+                        });
+                        if (!restoreResponse.ok) throw new Error('恢复失败');
+                        showSuccess(`@${username} 已恢复！`);
+                    } catch (restoreError) {
+                        showError('恢复失败：' + restoreError.message);
+                        return;
+                    }
+                }
 
-                showSuccess('用户 @' + username + ' 的数据采集完成！');
+                const response = await fetch('/api/aggregate/' + username);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // 可能是任务已在队列中或正在执行
+                    showError(data.error || '添加任务失败');
+                    return;
+                }
+
+                // 任务已加入队列
+                showSuccess(`任务已加入队列：@${username}`);
 
                 // 清空输入框
                 const inputEl = document.getElementById('aggregate-username');
@@ -1419,23 +1955,310 @@
                     inputEl.value = '';
                 }
 
-                // 重新加载博主列表
-                loadAllBloggers();
+                // 刷新队列状态
+                loadQueueStatus();
             } catch (error) {
-                showError('采集失败：' + error.message);
-            } finally {
-                // 移除采集中标记
-                state.aggregatingUsers.delete(username);
+                showError('添加任务失败：' + error.message);
+            }
+        }
 
-                // 恢复按钮状态
-                if (syncBtn) {
-                    syncBtn.classList.remove('loading');
-                    syncBtn.disabled = false;
+        // 加载任务队列状态
+        async function loadQueueStatus() {
+            try {
+                const response = await fetch('/api/aggregate/queue/status');
+                const data = await response.json();
+
+                // 渲染运行中的任务
+                renderRunningTask(data.runningTask);
+
+                // 渲染待执行队列
+                renderPendingTasks(data.pendingTasks);
+
+                // 渲染已完成任务
+                renderCompletedTasks(data.completedTasks);
+
+                // 更新待执行任务计数
+                const pendingCount = data.pendingCount || 0;
+                document.getElementById('pending-count').textContent = pendingCount + ' 个任务';
+
+                // 更新tab badge
+                const badge = document.getElementById('queue-badge');
+                const runningCount = data.runningTask ? 1 : 0;
+                const totalActiveCount = runningCount + pendingCount;
+
+                if (totalActiveCount > 0) {
+                    badge.textContent = totalActiveCount;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
                 }
-                if (aggregateBtn) {
-                    aggregateBtn.classList.remove('loading');
-                    aggregateBtn.disabled = false;
+            } catch (error) {
+                console.error('加载队列状态失败:', error);
+            }
+        }
+
+        // 渲染运行中的任务
+        function renderRunningTask(task) {
+            const container = document.getElementById('running-task-container');
+
+            if (!task) {
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--gray); background: var(--light-gray); border-radius: 8px;">
+                        暂无运行中的任务
+                    </div>
+                `;
+                return;
+            }
+
+            const startedAt = new Date(task.startedAt).toLocaleString('zh-CN');
+
+            container.innerHTML = `
+                <div style="padding: 15px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+                            border: 2px solid var(--primary); border-radius: 8px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: var(--dark); margin-bottom: 5px;">
+                                <span style="color: var(--primary);">🔄</span> @${task.username}
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--gray);">
+                                开始时间：${startedAt}
+                            </div>
+                        </div>
+                        <div class="loading-spinner" style="width: 30px; height: 30px;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染待执行任务列表
+        function renderPendingTasks(tasks) {
+            const container = document.getElementById('pending-tasks-container');
+
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--gray); background: var(--light-gray); border-radius: 8px;">
+                        队列为空
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tasks.map((task, index) => {
+                const createdAt = new Date(task.createdAt).toLocaleString('zh-CN');
+                return `
+                    <div style="padding: 12px; background: var(--white); border: 1px solid var(--light-gray);
+                                border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--dark);">
+                                <span style="color: var(--warning);">#${index + 1}</span> @${task.username}
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--gray); margin-top: 2px;">
+                                创建时间：${createdAt}
+                            </div>
+                        </div>
+                        <button class="btn btn-sm" style="background: var(--danger); color: white;"
+                                onclick="cancelTask('${task.id}')">
+                            取消
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 渲染已完成任务
+        function renderCompletedTasks(tasks) {
+            const container = document.getElementById('completed-tasks-container');
+
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--gray); background: var(--light-gray); border-radius: 8px;">
+                        暂无完成记录
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tasks.map(task => {
+                const completedAt = new Date(task.completedAt).toLocaleString('zh-CN');
+                const isSuccess = task.status === 'COMPLETED';
+                const isFailed = task.status === 'FAILED';
+                const statusIcon = isSuccess ? '✅' : '❌';
+                const statusColor = isSuccess ? 'var(--success)' : 'var(--danger)';
+
+                return `
+                    <div style="padding: 12px; background: var(--white); border: 1px solid var(--light-gray);
+                                border-radius: 8px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--dark);">
+                                    <span style="color: ${statusColor};">${statusIcon}</span> @${task.username}
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--gray); margin-top: 2px;">
+                                    完成时间：${completedAt}
+                                </div>
+                                ${task.errorMessage ? `
+                                    <div style="font-size: 0.875rem; color: var(--danger); margin-top: 4px;">
+                                        错误：${task.errorMessage}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${isFailed ? `
+                                <button class="btn btn-sm btn-primary" onclick="retryAggregation('${task.username}')" style="margin-left: 10px;">
+                                    🔄 重新采集
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 从队列标签页添加任务
+        async function aggregateUserDataFromQueue() {
+            const username = document.getElementById('queue-aggregate-username').value.trim();
+
+            if (!username) {
+                showError('请输入用户名！');
+                return;
+            }
+
+            try {
+                // 检查博主状态
+                const status = await checkBloggerStatus(username);
+                
+                // 如果博主已被放弃，询问是否恢复
+                if (status && status.exists && status.abandoned) {
+                    const reasonText = status.abandonedReason ? `\n\n放弃原因：${status.abandonedReason}` : '';
+                    const confirmed = await showConfirm(
+                        `该博主已被标记为放弃状态。${reasonText}\n\n是否要恢复该博主并继续采集？`,
+                        '博主已放弃',
+                        '⚠️'
+                    );
+                    
+                    if (!confirmed) {
+                        return;
+                    }
+                    
+                    // 先恢复博主
+                    try {
+                        const restoreResponse = await fetch(`/api/instagraph/blogger/${username}/restore`, {
+                            method: 'PUT'
+                        });
+                        if (!restoreResponse.ok) throw new Error('恢复失败');
+                        showSuccess(`@${username} 已恢复！`);
+                    } catch (restoreError) {
+                        showError('恢复失败：' + restoreError.message);
+                        return;
+                    }
                 }
+
+                const response = await fetch('/api/aggregate/' + username);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.error || '添加任务失败');
+                    return;
+                }
+
+                showSuccess(`任务已加入队列：@${username}`);
+
+                // 清空输入框
+                document.getElementById('queue-aggregate-username').value = '';
+
+                // 刷新队列状态
+                loadQueueStatus();
+            } catch (error) {
+                showError('添加任务失败：' + error.message);
+            }
+        }
+
+        // 重新采集失败的任务
+        async function retryAggregation(username) {
+            // 检查博主状态
+            const status = await checkBloggerStatus(username);
+            
+            // 如果博主已被放弃，询问是否恢复并继续采集
+            if (status && status.exists && status.abandoned) {
+                const reasonText = status.abandonedReason ? `\n\n放弃原因：${status.abandonedReason}` : '';
+                const confirmed = await showConfirm(
+                    `该博主已被标记为放弃状态。${reasonText}\n\n是否要恢复该博主并重新采集数据？`,
+                    '博主已放弃',
+                    '⚠️'
+                );
+                
+                if (!confirmed) {
+                    return;
+                }
+                
+                // 先恢复博主
+                try {
+                    const restoreResponse = await fetch(`/api/instagraph/blogger/${username}/restore`, {
+                        method: 'PUT'
+                    });
+                    if (!restoreResponse.ok) throw new Error('恢复失败');
+                    showSuccess(`@${username} 已恢复！`);
+                } catch (restoreError) {
+                    showError('恢复失败：' + restoreError.message);
+                    return;
+                }
+            } else {
+                // 没有被放弃，正常确认
+                const confirmed = await showConfirm(
+                    `确定要重新采集 @${username} 的数据吗？`,
+                    '重新采集',
+                    '🔄'
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch('/api/aggregate/' + username);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.error || '添加任务失败');
+                    return;
+                }
+
+                showSuccess(`任务已重新加入队列：@${username}`);
+
+                // 刷新队列状态
+                loadQueueStatus();
+            } catch (error) {
+                showError('添加任务失败：' + error.message);
+            }
+        }
+
+        // 取消任务
+        async function cancelTask(taskId) {
+            const confirmed = await showConfirm(
+                '确定要取消这个待执行任务吗？',
+                '取消任务',
+                '⚠️'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/aggregate/queue/task/${taskId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showError(data.error || '取消任务失败');
+                    return;
+                }
+
+                showSuccess('任务已取消');
+                loadQueueStatus();
+            } catch (error) {
+                showError('取消任务失败：' + error.message);
             }
         }
 
@@ -1498,26 +2321,14 @@
             }
         }
 
-        // 加载所有博主
+        // 加载所有博主（改用后端分页）
         async function loadAllBloggers() {
-            try {
-                const response = await fetch('/api/instagraph/bloggers');
-                const data = await response.json();
+            // 更新分组筛选选项
+            updateFilterGroupOptions();
 
-                // 保存到全局状态
-                state.allBloggers = data || [];
-
-                // 更新分组筛选选项
-                updateFilterGroupOptions();
-
-                // 执行筛选显示
-                filterBloggers();
-            } catch (error) {
-                console.error('加载博主失败：', error);
-                state.allBloggers = [];
-                document.getElementById('bloggers-table-body').innerHTML =
-                    '<tr><td colspan="5" class="empty-state">加载失败</td></tr>';
-            }
+            // 重置到第一页并加载数据
+            state.currentPage = 1;
+            await loadBloggersPage();
         }
 
         // 更新筛选分组选项
@@ -1543,37 +2354,52 @@
             });
         }
 
-        // 筛选博主
-        function filterBloggers() {
-            const usernameFilter = document.getElementById('filter-username')?.value.toLowerCase().trim() || '';
-            const groupFilter = document.getElementById('filter-group')?.value || '';
+        // 筛选博主（改用后端分页API）
+        async function filterBloggers() {
+            state.currentPage = 1; // 重置到第一页
+            await loadBloggersPage();
+        }
 
-            let filtered = state.allBloggers;
+        // 从后端加载当前页的博主数据
+        async function loadBloggersPage() {
+            try {
+                const keyword = document.getElementById('filter-username')?.value.trim() || '';
+                const seedGroup = document.getElementById('filter-group')?.value || '';
 
-            // 按用户名筛选
-            if (usernameFilter) {
-                filtered = filtered.filter(b =>
-                    b.username.toLowerCase().includes(usernameFilter) ||
-                    (b.fullName && b.fullName.toLowerCase().includes(usernameFilter))
-                );
-            }
+                // 构建查询参数
+                const params = new URLSearchParams({
+                    page: state.currentPage,
+                    size: state.pageSize
+                });
+                if (keyword) params.append('keyword', keyword);
+                if (seedGroup) params.append('seedGroup', seedGroup);
 
-            // 按分组筛选
-            if (groupFilter) {
-                if (groupFilter === '__NO_GROUP__') {
-                    // 未分组
-                    filtered = filtered.filter(b => !b.seedGroup);
-                } else {
-                    // 特定分组
-                    filtered = filtered.filter(b => b.seedGroup === groupFilter);
+                // 调用后端分页接口
+                const response = await fetch(`/api/instagraph/bloggers/page?${params}`);
+                if (!response.ok) {
+                    throw new Error('加载失败');
+                }
+
+                const pageResponse = await response.json();
+
+                // 渲染表格
+                renderBloggersTable(pageResponse.content);
+
+                // 渲染分页控件
+                renderPagination(pageResponse.totalElements, pageResponse.totalPages);
+
+                // 更新统计信息
+                const isFiltered = keyword || seedGroup;
+                updateBloggerStats(pageResponse.totalElements, pageResponse.totalElements, isFiltered);
+            } catch (error) {
+                console.error('加载博主失败：', error);
+                document.getElementById('bloggers-table-body').innerHTML =
+                    '<tr><td colspan="7" class="empty-state">加载失败</td></tr>';
+                const paginationContainer = document.getElementById('pagination-container');
+                if (paginationContainer) {
+                    paginationContainer.style.display = 'none';
                 }
             }
-
-            // 渲染结果
-            renderBloggersTable(filtered);
-
-            // 更新统计信息
-            updateBloggerStats(filtered.length, state.allBloggers.length, usernameFilter || groupFilter);
         }
 
         // 渲染博主表格
@@ -1581,7 +2407,7 @@
             const tbody = document.getElementById('bloggers-table-body');
 
             if (!bloggers || bloggers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">暂无数据</td></tr>';
                 return;
             }
 
@@ -1594,19 +2420,36 @@
                     ).join('')}
                 `;
 
+                // 性别显示
+                const genderDisplay = blogger.gender ?
+                    (blogger.gender === 'male' ? '👨 男' : blogger.gender === 'female' ? '👩 女' : blogger.gender) : '-';
+
+                // 状态显示和操作按钮
+                const isAbandoned = blogger.abandoned === true;
+                const statusDisplay = isAbandoned 
+                    ? `<span style="color: var(--warning); cursor: help;" title="${blogger.abandonedReason ? '原因：' + blogger.abandonedReason : '已放弃'}">⛔ 已放弃</span>`
+                    : '<span style="color: var(--success);">✓ 活跃</span>';
+                
+                const actionButtons = isAbandoned
+                    ? `<button class="btn btn-sm" style="background: #06b6d4; color: white; margin-right: 5px; font-weight: 500;" onclick="restoreBlogger('${blogger.username}')">♻️ 恢复</button>
+                       <button class="btn btn-sm" style="background: var(--danger); color: white; font-weight: 500;" onclick="deleteBlogger('${blogger.username}')">删除</button>`
+                    : `<button class="btn btn-sm btn-primary" id="sync-btn-${blogger.username}" onclick="aggregateUserData('${blogger.username}')" style="margin-right: 5px;">同步</button>
+                       <button class="btn btn-sm" style="background: var(--danger); color: white;" onclick="deleteBlogger('${blogger.username}')">删除</button>`;
+
                 return `
-                    <tr>
+                    <tr ${isAbandoned ? 'style="background-color: #fff8f0;"' : ''}>
                         <td><a href="https://www.instagram.com/${blogger.username}/" target="_blank" class="username-link">@${blogger.username}</a></td>
                         <td>${blogger.fullName || '-'}</td>
+                        <td>${blogger.bio || '-'}</td>
                         <td>
                             <select class="form-select" onchange="updateBloggerGroup('${blogger.username}', this.value)">
                                 ${groupOptions}
                             </select>
                         </td>
+                        <td>${statusDisplay}</td>
                         <td>${blogger.instagramId || '-'}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary" id="sync-btn-${blogger.username}" onclick="aggregateUserData('${blogger.username}')" style="margin-right: 5px;">同步</button>
-                            <button class="btn btn-sm" style="background: var(--danger); color: white;" onclick="deleteBlogger('${blogger.username}')">删除</button>
+                            ${actionButtons}
                         </td>
                     </tr>
                 `;
@@ -1629,26 +2472,109 @@
             }
         }
 
+        // 渲染分页控件
+        function renderPagination(totalItems, totalPages) {
+            const pageInfoEl = document.getElementById('page-info');
+            const pageNumbersEl = document.getElementById('page-numbers');
+            const firstBtn = document.getElementById('first-page-btn');
+            const prevBtn = document.getElementById('prev-page-btn');
+            const nextBtn = document.getElementById('next-page-btn');
+            const lastBtn = document.getElementById('last-page-btn');
+            const paginationContainer = document.getElementById('pagination-container');
+
+            if (totalItems === 0) {
+                paginationContainer.style.display = 'none';
+                return;
+            }
+
+            paginationContainer.style.display = 'flex';
+
+            // 更新页面信息
+            const startIndex = (state.currentPage - 1) * state.pageSize + 1;
+            const endIndex = Math.min(state.currentPage * state.pageSize, totalItems);
+            pageInfoEl.textContent = `显示第 ${startIndex}-${endIndex} 条，共 ${totalItems} 条`;
+
+            // 更新按钮状态
+            firstBtn.disabled = state.currentPage === 1;
+            prevBtn.disabled = state.currentPage === 1;
+            nextBtn.disabled = state.currentPage === totalPages || totalPages === 0;
+            lastBtn.disabled = state.currentPage === totalPages || totalPages === 0;
+
+            // 保存 totalPages 到 lastBtn 的 dataset，供 goToLastPage() 使用
+            lastBtn.dataset.totalPages = totalPages;
+
+            // 生成页码按钮
+            const maxPageButtons = 5;
+            let startPage = Math.max(1, state.currentPage - Math.floor(maxPageButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+
+            if (endPage - startPage < maxPageButtons - 1) {
+                startPage = Math.max(1, endPage - maxPageButtons + 1);
+            }
+
+            let pageButtonsHtml = '';
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === state.currentPage;
+                pageButtonsHtml += `
+                    <button class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline'}"
+                            onclick="goToPage(${i})"
+                            ${isActive ? 'disabled' : ''}>
+                        ${i}
+                    </button>
+                `;
+            }
+
+            pageNumbersEl.innerHTML = pageButtonsHtml;
+        }
+
+        // 分页导航函数（改用后端API）
+        async function goToPage(page) {
+            state.currentPage = page;
+            await loadBloggersPage();
+        }
+
+        async function nextPage() {
+            // totalPages will be determined by backend response
+            state.currentPage++;
+            await loadBloggersPage();
+        }
+
+        async function previousPage() {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                await loadBloggersPage();
+            }
+        }
+
+        async function goToLastPage() {
+            // Get totalPages from the pagination UI which was set by backend
+            const lastPageBtn = document.getElementById('last-page-btn');
+            if (lastPageBtn && lastPageBtn.dataset.totalPages) {
+                state.currentPage = parseInt(lastPageBtn.dataset.totalPages);
+                await loadBloggersPage();
+            }
+        }
+
+        async function changePageSize() {
+            state.pageSize = parseInt(document.getElementById('page-size').value);
+            state.currentPage = 1;
+            await loadBloggersPage();
+        }
+
         // 加载所有分组
         async function loadAllProjects() {
             try {
-                // 从新的分组API加载
-                const response = await fetch('/api/instagraph/groups');
+                // 从带统计信息的分组API加载
+                const response = await fetch('/api/instagraph/groups/with-stats');
                 const groups = await response.json();
 
                 state.allProjects.clear();
+                state.projectStats = {}; // 存储分组统计信息
                 groups.forEach(group => {
                     state.allProjects.add(group.name);
-                });
-
-                // 同时也从博主中加载（兼容旧数据）
-                const bloggersResponse = await fetch('/api/instagraph/bloggers');
-                const bloggers = await bloggersResponse.json();
-
-                bloggers.forEach(blogger => {
-                    if (blogger.seedGroup) {
-                        state.allProjects.add(blogger.seedGroup);
-                    }
+                    state.projectStats[group.name] = {
+                        bloggerCount: group.bloggerCount
+                    };
                 });
 
                 updateProjectSelects();
@@ -1671,7 +2597,10 @@
                 Array.from(state.allProjects).forEach(project => {
                     const option = document.createElement('option');
                     option.value = project;
-                    option.textContent = project;
+                    // 显示分组名称和种子数
+                    const stats = state.projectStats[project];
+                    const seedCount = stats ? stats.bloggerCount : 0;
+                    option.textContent = `${project} (${seedCount} 个种子)`;
                     if (project === currentValue) option.selected = true;
                     select.appendChild(option);
                 });
@@ -1691,14 +2620,17 @@
             state.currentProject = project;
 
             try {
-                const response = await fetch('/api/instagraph/bloggers');
-                const data = await response.json();
-
-                state.seedBloggers = data
-                    .filter(b => b.seedGroup === project)
-                    .map(b => b.username);
-
-                renderSeedList();
+                // 只更新种子数量，不加载完整列表
+                const stats = state.projectStats[project];
+                if (stats) {
+                    state.seedBloggers = [];  // 清空种子列表
+                    renderSeedList();
+                    // 更新种子数量显示
+                    const countEl = document.getElementById('seed-count');
+                    if (countEl) {
+                        countEl.textContent = `${stats.bloggerCount} 个种子`;
+                    }
+                }
             } catch (error) {
                 console.error('加载种子失败：', error);
             }
@@ -1718,30 +2650,25 @@
                 return;
             }
 
-            // 获取每个分组的统计信息
+            // 使用新的带统计信息的接口
             try {
-                const response = await fetch('/api/instagraph/bloggers');
-                const allBloggers = await response.json();
+                const response = await fetch('/api/instagraph/groups/with-stats');
+                const groupsWithStats = await response.json();
 
-                const projectStats = {};
-                Array.from(state.allProjects).forEach(project => {
-                    projectStats[project] = allBloggers.filter(b => b.seedGroup === project).length;
-                });
-
-                container.innerHTML = Array.from(state.allProjects).map(project => `
-                    <div class="project-card" onclick="selectProject('${project}')">
-                        <div class="project-name">${project}</div>
+                container.innerHTML = groupsWithStats.map(group => `
+                    <div class="project-card" onclick="selectProject('${group.name}')">
+                        <div class="project-name">${group.name}</div>
                         <div class="project-stats">
-                            <span>🌱 ${projectStats[project]} 个种子</span>
+                            <span>🌱 ${group.bloggerCount} 个种子</span>
                         </div>
                         <div class="project-actions">
                             <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white;"
-                                    onclick="event.stopPropagation(); viewProjectAnalysis('${project}')">
+                                    onclick="event.stopPropagation(); viewProjectAnalysis('${group.name}')">
                                 查看分析
                             </button>
-                            ${projectStats[project] === 0 ? `
+                            ${group.bloggerCount === 0 ? `
                                 <button class="btn btn-sm" style="background: var(--danger); color: white;"
-                                        onclick="event.stopPropagation(); deleteProject('${project}')">
+                                        onclick="event.stopPropagation(); deleteProject('${group.name}')">
                                     删除
                                 </button>
                             ` : ''}
@@ -1890,8 +2817,15 @@
         }
 
         function showLoading(message) {
-            // 可以添加加载动画
-            console.log('Loading:', message);
+            const container = document.getElementById('analysis-results');
+            if (container) {
+                container.innerHTML = `
+                    <div class="loading" style="grid-column: 1 / -1;">
+                        <div class="loading-spinner"></div>
+                        <p style="margin-top: 20px; font-size: 1rem; color: var(--dark);">${message}</p>
+                    </div>
+                `;
+            }
         }
 
         function showSuccess(message) {

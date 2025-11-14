@@ -8,6 +8,7 @@ import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.repository.BloggerRepository;
 import com.lulajax.instagraph.repository.LocationRepository;
 import com.lulajax.instagraph.repository.PostRepository;
+import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
 import org.slf4j.Logger;
@@ -23,12 +24,14 @@ public class PostInfoService {
     private final BloggerRepository bloggerRepository;
     private final LocationRepository locationRepository;
     private final TikhubApiProperties tikhubApiProperties;
+    private final BloggerService bloggerService;
 
-    public PostInfoService(PostRepository postRepository, BloggerRepository bloggerRepository, LocationRepository locationRepository, TikhubApiProperties tikhubApiProperties) {
+    public PostInfoService(PostRepository postRepository, BloggerRepository bloggerRepository, LocationRepository locationRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
         this.postRepository = postRepository;
         this.bloggerRepository = bloggerRepository;
         this.locationRepository = locationRepository;
         this.tikhubApiProperties = tikhubApiProperties;
+        this.bloggerService = bloggerService;
     }
 
     public PostInfoResponse testParsePostInfo(String json) {
@@ -76,12 +79,11 @@ public class PostInfoService {
             if (postInfo.getOwner() != null) {
                 PostInfoResponse.Owner ownerDto = postInfo.getOwner();
                 logger.debug("处理帖子所有者: {}", ownerDto.getUsername());
-                Blogger owner = bloggerRepository.findByInstagramId(Long.parseLong(ownerDto.getId())).orElseGet(() -> {
-                    logger.info("帖子所有者 {} (ID: {}) 不在数据库中，将创建新记录", ownerDto.getUsername(), ownerDto.getId());
-                    Blogger newOwner = new Blogger(ownerDto.getUsername(), "default");
-                    newOwner.setInstagramId(Long.parseLong(ownerDto.getId()));
-                    return bloggerRepository.save(newOwner);
-                });
+                Blogger owner = bloggerService.getOrCreateBloggerByInstagramId(
+                    Long.parseLong(ownerDto.getId()), 
+                    ownerDto.getUsername(), 
+                    "default"
+                );
                 // Manually update both sides of the relationship
                 owner.getPosts().add(post);
                 post.setOwner(owner);
@@ -106,13 +108,15 @@ public class PostInfoService {
                 for(PostInfoResponse.TaggedUserEdge edge : postInfo.getEdgeMediaToTaggedUser().getEdges()){
                     PostInfoResponse.TaggedUser userDto = edge.getNode().getUser();
                     logger.debug("处理被标记的用户: {}", userDto.getUsername());
-                    Blogger taggedBlogger = bloggerRepository.findByInstagramId(Long.parseLong(userDto.getId())).orElseGet(() -> {
-                        logger.info("被标记的用户 {} (ID: {}) 不在数据库中，将创建新记录", userDto.getUsername(), userDto.getId());
-                        Blogger newBlogger = new Blogger(userDto.getUsername(), "default");
-                        newBlogger.setInstagramId(Long.parseLong(userDto.getId()));
-                        newBlogger.setFullName(userDto.getFullName());
-                        return bloggerRepository.save(newBlogger);
-                    });
+                    Blogger taggedBlogger = bloggerService.getOrCreateBloggerByInstagramId(
+                        Long.parseLong(userDto.getId()), 
+                        userDto.getUsername(), 
+                        "default"
+                    );
+                    // 更新fullName
+                    if (userDto.getFullName() != null) {
+                        taggedBlogger.setFullName(userDto.getFullName());
+                    }
                     // Manually update both sides of the relationship
                     post.getTaggedInUsers().add(taggedBlogger);
                     taggedBlogger.getTaggedInPosts().add(post);
@@ -126,12 +130,11 @@ public class PostInfoService {
                 for(PostInfoResponse.LikedByEdge likedByEdge : postInfo.getEdgeMediaPreviewLike().getEdges()){
                     PostInfoResponse.LikedByNode likedByNode = likedByEdge.getNode();
                     logger.debug("处理点赞用户: {}", likedByNode.getUsername());
-                    Blogger liker = bloggerRepository.findByInstagramId(Long.parseLong(likedByNode.getId())).orElseGet(() -> {
-                        logger.info("点赞用户 {} (ID: {}) 不在数据库中，将创建新记录", likedByNode.getUsername(), likedByNode.getId());
-                        Blogger newLiker = new Blogger(likedByNode.getUsername(), "default");
-                        newLiker.setInstagramId(Long.parseLong(likedByNode.getId()));
-                        return bloggerRepository.save(newLiker);
-                    });
+                    Blogger liker = bloggerService.getOrCreateBloggerByInstagramId(
+                        Long.parseLong(likedByNode.getId()), 
+                        likedByNode.getUsername(), 
+                        "default"
+                    );
                     // Manually update both sides of the relationship
                     post.getLikedBy().add(liker);
                     liker.getLikedPosts().add(post);

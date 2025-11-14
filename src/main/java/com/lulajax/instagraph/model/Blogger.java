@@ -66,6 +66,16 @@ public class Blogger {
     @Property("full_name")
     private String fullName;
 
+    // 放弃相关字段
+    @Property("abandoned")
+    private Boolean abandoned;  // 是否已放弃（默认 false 或 null）
+
+    @Property("abandoned_at")
+    private Long abandonedAt;  // 放弃时间戳
+
+    @Property("abandoned_reason")
+    private String abandonedReason;  // 放弃原因（可选）
+
     @JsonIgnore
     @Relationship(type = "FOLLOWS", direction = Relationship.Direction.OUTGOING)
     private Set<Blogger> followings = new HashSet<>();
@@ -85,6 +95,11 @@ public class Blogger {
     @JsonIgnore
     @Relationship(type = "TAGGED_IN", direction = Relationship.Direction.OUTGOING)
     private Set<Post> taggedInPosts = new HashSet<>();
+
+
+    public Blogger(String username) {
+        this.username = username;
+    }
 
     public Blogger(String username, String seedGroup) {
         this.username = username;
