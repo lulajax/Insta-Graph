@@ -95,6 +95,7 @@ public class UserInfoService {
             blogger.setFullName(userInfoV2Data.getFullName());
             blogger.setBio(userInfoV2Data.getBiography());
             blogger.setIsVerified(userInfoV2Data.isVerified());
+            blogger.setIsPrivate(userInfoV2Data.isPrivate());
             if (userInfoV2Data.getId() != null) {
                 try {
                     blogger.setInstagramId(Long.parseLong(userInfoV2Data.getId()));

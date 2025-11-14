@@ -36,13 +36,9 @@ public class UserInfoController {
     public ResponseEntity<Blogger> fetchBlogger(@PathVariable String username) {
         Blogger blogger = null;
         try {
-            blogger = userInfoService.fetchUserInfoByUsernameV3(username);
+            blogger = userInfoService.fetchUserInfoByUsernameV2(username);
         } catch (Exception e) {
-            try {
-                blogger = userInfoService.fetchUserInfoByUsernameV2(username);
-            } catch (Exception e2) {
-                return ResponseEntity.notFound().build();
-            }
+            return ResponseEntity.notFound().build();
         }
         if (blogger != null) {
             return ResponseEntity.ok(blogger);

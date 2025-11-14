@@ -63,6 +63,9 @@ public class Blogger {
     @Property("is_verified")
     private Boolean isVerified;
 
+    @Property("is_private")
+    private Boolean isPrivate;
+
     @Property("full_name")
     private String fullName;
 

@@ -95,15 +95,15 @@ public class InstaGraphService {
     /**
      * 分页查询博主（支持搜索和筛选）
      */
-    public PageResponse<Blogger> getBloggersByPage(int page, int size, String keyword, String seedGroup) {
+    public PageResponse<Blogger> getBloggersByPage(int page, int size, String keyword, String seedGroup, Boolean abandoned) {
         // 计算跳过的记录数（页码从1开始）
         long skip = (long) (page - 1) * size;
 
         // 查询当前页的数据
-        List<Blogger> content = bloggerRepository.findByFiltersWithPagination(keyword, seedGroup, skip, size);
+        List<Blogger> content = bloggerRepository.findByFiltersWithPagination(keyword, seedGroup, abandoned, skip, size);
 
         // 查询总记录数
-        long totalElements = bloggerRepository.countByFilters(keyword, seedGroup);
+        long totalElements = bloggerRepository.countByFilters(keyword, seedGroup, abandoned);
 
         // 计算总页数
         int totalPages = (int) Math.ceil((double) totalElements / size);
@@ -182,5 +182,19 @@ public class InstaGraphService {
         return bloggerRepository.findById(username)
                 .map(blogger -> Boolean.TRUE.equals(blogger.getAbandoned()))
                 .orElse(false);
+    }
+
+    /**
+     * 获取与指定博主有连接的种子博主列表
+     */
+    public java.util.List<com.lulajax.instagraph.dto.ConnectedSeedInfo> getConnectedSeeds(String username, String project) {
+        return bloggerRepository.findConnectedSeeds(username, project);
+    }
+
+    /**
+     * 获取博主与种子博主共同被标记的帖子列表
+     */
+    public java.util.List<com.lulajax.instagraph.dto.CoTaggedPostInfo> getCoTaggedPosts(String username, String project) {
+        return bloggerRepository.findCoTaggedPosts(username, project);
     }
 }

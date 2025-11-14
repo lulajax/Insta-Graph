@@ -60,9 +60,12 @@ public class InstaGraphController {
             @RequestParam(required = false) String keyword,
 
             @Parameter(description = "分组筛选（为空表示不筛选，'__NO_GROUP__'表示未分组）", example = "busan_dancers")
-            @RequestParam(required = false) String seedGroup
+            @RequestParam(required = false) String seedGroup,
+
+            @Parameter(description = "是否放弃筛选（true 或 false）")
+            @RequestParam(required = false) Boolean abandoned
     ) {
-        PageResponse<Blogger> response = instaGraphService.getBloggersByPage(page, size, keyword, seedGroup);
+        PageResponse<Blogger> response = instaGraphService.getBloggersByPage(page, size, keyword, seedGroup, abandoned);
         return ResponseEntity.ok(response);
     }
 
@@ -215,5 +218,25 @@ public class InstaGraphController {
         response.setSeedGroup(blogger.getSeedGroup());
         
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/analysis/connected-seeds")
+    @Operation(summary = "获取连接的种子博主", description = "获取与指定博主有共同标记关系的种子博主列表")
+    @Tag(name = "分析")
+    public ResponseEntity<List<com.lulajax.instagraph.dto.ConnectedSeedInfo>> getConnectedSeeds(
+            @Parameter(description = "博主用户名", required = true) @RequestParam String username,
+            @Parameter(description = "种子分组", required = true) @RequestParam String project) {
+        List<com.lulajax.instagraph.dto.ConnectedSeedInfo> seeds = instaGraphService.getConnectedSeeds(username, project);
+        return ResponseEntity.ok(seeds);
+    }
+
+    @GetMapping("/analysis/co-tagged-posts")
+    @Operation(summary = "获取共同标记的帖子", description = "获取博主与种子博主共同被标记的帖子列表")
+    @Tag(name = "分析")
+    public ResponseEntity<List<com.lulajax.instagraph.dto.CoTaggedPostInfo>> getCoTaggedPosts(
+            @Parameter(description = "博主用户名", required = true) @RequestParam String username,
+            @Parameter(description = "种子分组", required = true) @RequestParam String project) {
+        List<com.lulajax.instagraph.dto.CoTaggedPostInfo> posts = instaGraphService.getCoTaggedPosts(username, project);
+        return ResponseEntity.ok(posts);
     }
 }

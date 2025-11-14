@@ -47,18 +47,24 @@ public class AggregationService {
         Long userId = blogger.getInstagramId();
         logger.info("成功获取到用户 {} 的信息，Instagram ID: {}", username, userId);
 
+        if (blogger.getIsPrivate() != null && blogger.getIsPrivate()) {
+            logger.info("用户 {} 是私密账户，跳过被标记帖子的获取", username);
+            throw new RuntimeException("用户是私密账户，无法采集数据");
+        }
+        
         // 2. 获取并存储用户的关注列表
         // logger.info("正在获取 {} 的关注列表", username);
         // followingService.fetchUserFollowingByUsername(username);
         // logger.info("完成 {} 关注列表的获取", username);
 
         // 3. 获取并存储用户的帖子列表
-        // logger.info("正在获取用户 {} (ID: {}) 的帖子列表", username, userId);
-        // postService.fetchUserPostsByUserId(userId);
-        // logger.info("完成用户 {} (ID: {}) 帖子列表的获取", username, userId);
+        logger.info("正在获取用户 {} (ID: {}) 的帖子列表", username, userId);
+        postService.fetchUserPostsByUserId(userId);
+        logger.info("完成用户 {} (ID: {}) 帖子列表的获取", username, userId);
 
         // 4. 获取并存储用户被标记的帖子
         logger.info("正在获取用户 {} (ID: {}) 被标记的帖子", username, userId);
+
         taggedPostService.fetchUserTaggedPostsByUserId(userId);
         logger.info("完成用户 {} (ID: {}) 被标记帖子的获取", username, userId);
 

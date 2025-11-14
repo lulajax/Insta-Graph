@@ -182,8 +182,7 @@ public class AggregationTaskService {
             // 标记为失败
             task.setStatus(AggregationTask.TaskStatus.FAILED);
             task.setCompletedAt(LocalDateTime.now());
-            task.setErrorMessage("数据采集失败，请稍后重试");
-
+            task.setErrorMessage(e.getMessage());
             log.error("任务执行失败：{}, 错误：{}", task.getUsername(), e.getMessage(), e);
         } finally {
             // 清除运行中的任务引用

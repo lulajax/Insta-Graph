@@ -52,7 +52,7 @@ public class PostService {
         }
         Blogger blogger = bloggerOpt.get();
 
-        String url = tikhubApiProperties.getUrl().get("fetch-user-posts-by-user-id") + "?user_id=" + userId;
+        String url = tikhubApiProperties.getUrl().get("fetch-user-posts-by-user-id") + "?user_id=" + userId + "&count=20";
         logger.debug("请求URL: {}", url);
 
         String result = HttpUtil.createGet(url)
@@ -62,7 +62,12 @@ public class PostService {
                 .body();
         logger.debug("API 响应: {}", result);
 
-        UserPostResponse response = JsonUtil.parseObject(result, UserPostResponse.class);
+        UserPostResponse response = null;
+        try {
+            response = JsonUtil.parseObject(result, UserPostResponse.class);
+        } catch (Exception e) {
+            throw new RuntimeException("无法采集，用户可能不存在发布的帖子，请稍后重试");
+        }
 
         if (response != null && response.getData() != null && response.getData().getData() != null && response.getData().getData().getUser() != null &&
                 response.getData().getData().getUser().getEdgeOwnerToTimelineMedia() != null) {
@@ -74,6 +79,7 @@ public class PostService {
                 Post post = postRepository.findById(node.getId()).orElse(new Post(node.getId()));
                 post.setDisplayUrl(node.getDisplayUrl());
                 post.setVideo(node.isVideo());
+                post.setShortcode(node.getShortcode());
                 if(node.getEdgeMediaToCaption() != null && !node.getEdgeMediaToCaption().getEdges().isEmpty()){
                     post.setCaption(node.getEdgeMediaToCaption().getEdges().get(0).getNode().getText());
                 }

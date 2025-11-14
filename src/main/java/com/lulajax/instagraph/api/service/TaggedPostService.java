@@ -49,7 +49,7 @@ public class TaggedPostService {
         Blogger taggedBlogger = bloggerRepository.findByInstagramId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Blogger with Instagram ID " + userId + " not found."));
 
-        String url = tikhubApiProperties.getUrl().get("fetch-user-tagged-posts-by-user-id") + "?user_id=" + userId;
+        String url = tikhubApiProperties.getUrl().get("fetch-user-tagged-posts-by-user-id") + "?user_id=" + userId + "&count=1";
         logger.debug("请求URL: {}", url);
         String result = HttpUtil.createGet(url)
                 .header("x-rapidapi-host", tikhubApiProperties.getXRapidapiHost())
@@ -58,7 +58,13 @@ public class TaggedPostService {
                 .body();
         logger.debug("API 响应: {}", result);
 
-        TaggedPostResponse response = JsonUtil.parseObject(result, TaggedPostResponse.class);
+        
+        TaggedPostResponse response = null;
+        try {
+            response = JsonUtil.parseObject(result, TaggedPostResponse.class);
+        } catch (Exception e) {
+            throw new RuntimeException("无法采集，用户可能不存在被标记的帖子，请稍后重试");
+        }
 
         if (response != null && response.getData() != null && response.getData().getData() != null && response.getData().getData().getUser() != null &&
                 response.getData().getData().getUser().getEdgeUserToPhotosOfYou() != null) {

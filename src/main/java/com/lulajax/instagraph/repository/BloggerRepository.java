@@ -38,12 +38,22 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
                 WHEN $seedGroup = '__NO_GROUP__' THEN b.seed_group IS NULL
                 ELSE b.seed_group = $seedGroup
             END
+            // 放弃状态筛选条件
+            AND CASE
+                // 如果参数为 true, 查询已放弃的
+                WHEN $abandoned = true THEN b.abandoned = true
+                // 如果参数为 false, 查询活跃的 (abandoned 为 false 或 null)
+                WHEN $abandoned = false THEN (b.abandoned IS NULL OR b.abandoned = false)
+                // 否则 (参数为 null), 不进行筛选
+                ELSE true
+            END
         RETURN b
         ORDER BY b.username
         SKIP $skip LIMIT $limit
     """)
     List<Blogger> findByFiltersWithPagination(@Param("keyword") String keyword,
                                                @Param("seedGroup") String seedGroup,
+                                               @Param("abandoned") Boolean abandoned,
                                                @Param("skip") long skip,
                                                @Param("limit") int limit);
 
@@ -65,10 +75,20 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
                 WHEN $seedGroup = '__NO_GROUP__' THEN b.seed_group IS NULL
                 ELSE b.seed_group = $seedGroup
             END
+            // 放弃状态筛选条件
+            AND CASE
+                // 如果参数为 true, 查询已放弃的
+                WHEN $abandoned = true THEN b.abandoned = true
+                // 如果参数为 false, 查询活跃的 (abandoned 为 false 或 null)
+                WHEN $abandoned = false THEN (b.abandoned IS NULL OR b.abandoned = false)
+                // 否则 (参数为 null), 不进行筛选
+                ELSE true
+            END
         RETURN count(b)
     """)
     long countByFilters(@Param("keyword") String keyword,
-                        @Param("seedGroup") String seedGroup);
+                        @Param("seedGroup") String seedGroup,
+                        @Param("abandoned") Boolean abandoned);
 
     @Query("""
         MATCH (seed:Blogger {seed_group: $project})
@@ -107,6 +127,7 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         WHERE (rec.seed_group IS NULL OR rec.seed_group <> $project)
           AND rec <> seed
           AND (rec.abandoned IS NULL OR rec.abandoned = false)
+          AND (rec.isPrivate IS NULL OR rec.isPrivate = false)
 
         // 第三步：汇总共同标记的帖子和连接的种子
         WITH rec, total_seeds,
@@ -149,6 +170,30 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         LIMIT 100
     """)
     List<EnhancedAnalysisResult> findCoTaggedEnhanced(String project, int min_co_tags, double min_coverage);
+
+    /**
+     * 获取与指定博主有连接的种子博主列表
+     */
+    @Query("""
+        MATCH (seed:Blogger {seed_group: $project})
+        MATCH (seed)-[:TAGGED_IN]->(post:Post)<-[:TAGGED_IN]-(rec:Blogger {username: $username})
+        WITH seed, COUNT(DISTINCT post) AS coTagCount
+        RETURN seed.username AS username, coTagCount AS coTagCount
+        ORDER BY coTagCount DESC
+    """)
+    List<com.lulajax.instagraph.dto.ConnectedSeedInfo> findConnectedSeeds(@Param("username") String username, @Param("project") String project);
+
+    /**
+     * 获取博主与种子博主共同被标记的帖子列表
+     */
+    @Query("""
+        MATCH (seed:Blogger {seed_group: $project})
+        MATCH (seed)-[:TAGGED_IN]->(post:Post)<-[:TAGGED_IN]-(rec:Blogger {username: $username})
+        WITH post, COLLECT(DISTINCT seed.username) AS taggedSeeds
+        RETURN post.shortcode AS shortCode, post.taken_at AS takenAt, taggedSeeds AS taggedSeeds
+        ORDER BY post.id DESC
+    """)
+    List<com.lulajax.instagraph.dto.CoTaggedPostInfo> findCoTaggedPosts(@Param("username") String username, @Param("project") String project);
 
     /**
      * 删除指定博主的所有 BELONGS_TO 关系（同时清除 seed_group 属性）
