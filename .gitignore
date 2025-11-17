@@ -13,3 +13,4 @@ logs/
 target/
 target/*
 src/main/resources/application.properties
+AGENTS.md
