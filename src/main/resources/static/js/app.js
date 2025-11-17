@@ -320,15 +320,22 @@ async function runEnhancedAnalysis() {
     showLoading('智能分析中...');
 
     try {
-        // 第一步：获取该项目的种子博主总数
-        const bloggersResponse = await fetch('/api/instagraph/bloggers');
-        const allBloggers = await bloggersResponse.json();
-        const seedBloggers = allBloggers.filter(b => b.seedGroup === project);
-        const totalSeeds = seedBloggers.length;
+        // 优化：直接从 state.projectStats 获取种子总数，避免重新请求
+        const projectStats = state.projectStats[project];
+        let totalSeeds = projectStats ? projectStats.bloggerCount : 0;
 
+        // 如果 state 中没有数据，则回退到 API 请求（健壮性）
         if (totalSeeds === 0) {
-            showError('该分组暂无种子博主，请先添加种子！');
-            return;
+            console.warn('无法从 state 获取种子总数，回退到 API 请求');
+            const bloggersResponse = await fetch('/api/instagraph/bloggers');
+            const allBloggers = await bloggersResponse.json();
+            const seedBloggers = allBloggers.filter(b => b.seedGroup === project);
+            
+            if (seedBloggers.length === 0) {
+                showError('该分组暂无种子博主，请先添加种子！');
+                return;
+            }
+            totalSeeds = seedBloggers.length;
         }
 
         // 第二步：将人数转换为覆盖率
@@ -340,6 +347,9 @@ async function runEnhancedAnalysis() {
             document.getElementById('min-seed-count').value = totalSeeds;
             return;
         }
+
+        // 添加3秒等待时间，防止请求过于频繁
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         // 第三步：调用增强分析 API
         const response = await fetch(
