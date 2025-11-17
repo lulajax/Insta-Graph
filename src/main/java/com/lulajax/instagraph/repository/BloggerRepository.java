@@ -189,8 +189,10 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
     @Query("""
         MATCH (seed:Blogger {seed_group: $project})
         MATCH (seed)-[:TAGGED_IN]->(post:Post)<-[:TAGGED_IN]-(rec:Blogger {username: $username})
-        WITH post, COLLECT(DISTINCT seed.username) AS taggedSeeds
-        RETURN post.shortcode AS shortCode, post.taken_at AS takenAt, taggedSeeds AS taggedSeeds
+        // 新增步骤：找到所有被标记在该帖子中的用户
+        MATCH (taggedUser:Blogger)-[:TAGGED_IN]->(post)
+        WITH post, COLLECT(DISTINCT seed.username) AS taggedSeeds, COLLECT(DISTINCT taggedUser.username) AS allTaggedUsers
+        RETURN post.shortcode AS shortCode, post.taken_at AS takenAt, taggedSeeds AS taggedSeeds, allTaggedUsers as allTaggedUsers
         ORDER BY post.id DESC
     """)
     List<com.lulajax.instagraph.dto.CoTaggedPostInfo> findCoTaggedPosts(@Param("username") String username, @Param("project") String project);

@@ -690,7 +690,7 @@ async function showCoTaggedPosts(username, project) {
                                     </a>
                                 </div>
                                 <div style="font-size: 0.9rem; color: var(--gray); margin-bottom: 8px;">
-                                    共同标记的种子：
+                                    共同标记的种子博主：
                                 </div>
                                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                                     ${post.taggedSeeds.map(seed => `
@@ -701,6 +701,39 @@ async function showCoTaggedPosts(username, project) {
                                         </a>
                                     `).join('')}
                                 </div>
+                                
+                                ${(() => {
+                                    // 确保 allTaggedUsers 和 taggedSeeds 都是数组，且 allTaggedUsers 存在
+                                    if (!Array.isArray(post.allTaggedUsers) || !Array.isArray(post.taggedSeeds)) {
+                                        return '';
+                                    }
+                                    
+                                    // 计算其他被标记的用户（排除种子和当前用户自己）
+                                    const otherTagged = post.allTaggedUsers.filter(user => 
+                                        !post.taggedSeeds.includes(user) && user !== username
+                                    );
+
+                                    // 如果没有其他被标记的用户，则不显示该部分
+                                    if (otherTagged.length === 0) {
+                                        return '';
+                                    }
+
+                                    // 如果有，则渲染标题和用户列表
+                                    return `
+                                        <div style="font-size: 0.9rem; color: var(--gray); margin-bottom: 8px; margin-top: 12px;">
+                                            其他被标记：
+                                        </div>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                            ${otherTagged.map(user => `
+                                                <a href="https://www.instagram.com/${user}/" target="_blank"
+                                                   class="username-link-secondary"
+                                                   style="font-size: 0.85rem; padding: 4px 8px; background: #f0f0f0; border-radius: 4px;">
+                                                    @${user}
+                                                </a>
+                                            `).join('')}
+                                        </div>
+                                    `;
+                                })()}
                             </div>
                         `).join('')}
                     </div>
