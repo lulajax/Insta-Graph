@@ -659,6 +659,13 @@ async function showConnectedSeeds(username, project) {
     }
 }
 
+async function showConnectedSeedsFromDataTab(username, seedGroup) {
+    const defaultProject = seedGroup || null;
+    const project = await showProjectSelectDialog(username, defaultProject);
+    if (!project) return;
+    await showConnectedSeeds(username, project);
+}
+
 // 显示共同标记的帖子列表
 async function showCoTaggedPosts(username, project) {
     try {
@@ -757,6 +764,13 @@ async function showCoTaggedPosts(username, project) {
     } catch (error) {
         showError('获取帖子列表失败：' + error.message);
     }
+}
+
+async function showCoTaggedPostsFromDataTab(username, seedGroup) {
+    const defaultProject = seedGroup || null;
+    const project = await showProjectSelectDialog(username, defaultProject);
+    if (!project) return;
+    await showCoTaggedPosts(username, project);
 }
 
 // 晋升为种子博主
@@ -992,6 +1006,64 @@ async function showAbandonDialog(username) {
         // 聚焦到输入框
         setTimeout(() => {
             document.getElementById('abandon-reason')?.focus();
+        }, 100);
+    });
+}
+
+// 显示分组选择对话框（用于“共同连接/共同帖子”）
+async function showProjectSelectDialog(username, defaultProject) {
+    const groups = Array.from(state.allProjects || []);
+    if (!groups.length) {
+        showError('当前没有可用的分组，请先在“工作流程”中创建至少一个分组。');
+        return null;
+    }
+
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+
+        const optionsHtml = groups.map(group => {
+            const selected = group === defaultProject ? 'selected' : '';
+            return `<option value="${group}" ${selected}>${group}</option>`;
+        }).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--primary);">选择分组</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 12px; color: var(--gray);">
+                        为 <strong>@${username}</strong> 选择一个分组，用于计算与哪些种子有共同连接/共同帖子：
+                    </p>
+                    <select id="analysis-project-select" class="form-select">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove(); window.analysisProjectDialogResolve(null);">
+                        取消
+                    </button>
+                    <button class="btn btn-primary" onclick="
+                        (function() {
+                            const select = document.getElementById('analysis-project-select');
+                            const project = select ? select.value : '';
+                            const overlay = select.closest('.modal-overlay');
+                            if (overlay) overlay.remove();
+                            window.analysisProjectDialogResolve(project || null);
+                        })();
+                    ">
+                        确定
+                    </button>
+                </div>
+            </div>
+        `;
+
+        window.analysisProjectDialogResolve = resolve;
+        document.body.appendChild(modal);
+
+        setTimeout(() => {
+            document.getElementById('analysis-project-select')?.focus();
         }, 100);
     });
 }
@@ -1589,19 +1661,26 @@ function renderBloggersTable(bloggers) {
         const statusDisplay = isAbandoned 
             ? `<span style="color: var(--warning); cursor: help;" title="${blogger.abandonedReason ? '原因：' + blogger.abandonedReason : '已放弃'}">⛔ 已放弃</span>`
             : '<span style="color: var(--success);">✓ 活跃</span>';
-        
+
+        const analysisButtons = `
+            <button class="btn btn-sm btn-outline" style="margin-right: 5px;" onclick="showConnectedSeedsFromDataTab('${blogger.username}', '${blogger.seedGroup || ''}')">共同连接</button>
+            <button class="btn btn-sm btn-outline" style="margin-right: 5px; margin-top: 4px;" onclick="showCoTaggedPostsFromDataTab('${blogger.username}', '${blogger.seedGroup || ''}')">共同帖子</button>
+        `;
+
         const actionButtons = isAbandoned
-            ? `<button class="btn btn-sm" style="background: #06b6d4; color: white; margin-right: 5px; font-weight: 500;" onclick="restoreBlogger('${blogger.username}')">♻️ 恢复</button>
+            ? `${analysisButtons}
+               <button class="btn btn-sm" style="background: #06b6d4; color: white; margin-right: 5px; font-weight: 500;" onclick="restoreBlogger('${blogger.username}')">♻️ 恢复</button>
                <button class="btn btn-sm" style="background: var(--danger); color: white; font-weight: 500;" onclick="deleteBlogger('${blogger.username}')">删除</button>`
-            : `<button class="btn btn-sm btn-primary" id="sync-btn-${blogger.username}" onclick="aggregateUserData('${blogger.username}')" style="margin-right: 5px;">同步</button>
-               <button class="btn btn-sm" style="background: var(--warning); color: white; margin-right: 5px;" onclick="abandonBlogger('${blogger.username}')">⛔ 放弃</button>
-               <button class="btn btn-sm" style="background: var(--danger); color: white;" onclick="deleteBlogger('${blogger.username}')">删除</button>`;
+            : `${analysisButtons}
+               <button class="btn btn-sm btn-primary" id="sync-btn-${blogger.username}" onclick="aggregateUserData('${blogger.username}')" style="margin-right: 5px; margin-top: 4px;">同步</button>
+               <button class="btn btn-sm" style="background: var(--warning); color: white; margin-right: 5px; margin-top: 4px;" onclick="abandonBlogger('${blogger.username}')">⛔ 放弃</button>
+               <button class="btn btn-sm" style="background: var(--danger); color: white; margin-top: 4px;" onclick="deleteBlogger('${blogger.username}')">删除</button>`;
 
         return `
             <tr ${isAbandoned ? 'style="background-color: #fff8f0;"' : ''}>
                 <td><a href="https://www.instagram.com/${blogger.username}/" target="_blank" class="username-link">@${blogger.username}</a></td>
                 <td>${blogger.fullName || '-'}</td>
-                <td>${blogger.bio || '-'}</td>
+                <td title="${blogger.bio || '-'}">${blogger.bio || '-'}</td>
                 <td>
                     <select class="form-select" onchange="updateBloggerGroup('${blogger.username}', this.value)">
                         ${groupOptions}
@@ -1609,7 +1688,7 @@ function renderBloggersTable(bloggers) {
                 </td>
                 <td>${statusDisplay}</td>
                 <td>${blogger.instagramId || '-'}</td>
-                <td>
+                <td class="actions-cell">
                     ${actionButtons}
                 </td>
             </tr>

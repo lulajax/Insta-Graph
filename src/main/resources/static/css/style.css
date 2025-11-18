@@ -299,6 +299,34 @@ td {
     border-bottom: 1px solid var(--light-gray);
 }
 
+/* 操作列：避免按钮换行，统一一行展示 */
+.actions-cell {
+    white-space: nowrap;
+}
+
+.actions-cell .btn-sm {
+    padding: 6px 10px;
+    margin-bottom: 2px;
+}
+
+/* 限制“全名”列的最大宽度，超出省略号显示 */
+.table-container table th:nth-child(2),
+.table-container table td:nth-child(2) {
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 限制“简介”列的最大宽度，超出省略号显示 */
+.table-container table th:nth-child(3),
+.table-container table td:nth-child(3) {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 tr:hover {
     background: rgba(99, 102, 241, 0.05);
 }
@@ -794,4 +822,3 @@ table .form-select:focus {
         display: none;
     }
 }
-

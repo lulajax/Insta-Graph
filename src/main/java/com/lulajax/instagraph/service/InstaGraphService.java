@@ -5,7 +5,6 @@ import com.lulajax.instagraph.dto.EnhancedAnalysisResult;
 import com.lulajax.instagraph.dto.PageResponse;
 import com.lulajax.instagraph.model.Blogger;
 import com.lulajax.instagraph.model.Post;
-import com.lulajax.instagraph.model.SeedGroup;
 import com.lulajax.instagraph.repository.BloggerRepository;
 import com.lulajax.instagraph.repository.PostRepository;
 import com.lulajax.instagraph.repository.SeedGroupRepository;
@@ -31,42 +30,14 @@ public class InstaGraphService {
 
     @Transactional("transactionManager")
     public Blogger addBlogger(String username, String seedGroup) {
-        // 先查找是否已存在该博主
-        Blogger blogger = bloggerRepository.findById(username)
-                .orElse(null);
-
-        // 如果博主不存在，先创建基础节点
-        if (blogger == null) {
-            blogger = new Blogger(username, seedGroup);
-            blogger = bloggerRepository.save(blogger);
-        }
-
-        // 如果博主已被放弃，自动恢复
-        if (Boolean.TRUE.equals(blogger.getAbandoned())) {
-            blogger.setAbandoned(false);
-            blogger.setAbandonedAt(null);
-            blogger.setAbandonedReason(null);
-            blogger = bloggerRepository.save(blogger);
-        }
-
-        // 使用 Cypher 更新分组属性和关系（更可靠）
-        if (seedGroup != null && !seedGroup.isEmpty()) {
-            // 确保分组存在
-            seedGroupRepository.findById(seedGroup)
-                    .orElseGet(() -> {
-                        SeedGroup newGroup = new SeedGroup(seedGroup);
-                        return seedGroupRepository.save(newGroup);
-                    });
-            
-            // 使用 Cypher 修复关系（删除旧关系、更新属性、创建新关系）
-            bloggerRepository.fixBelongsToRelationship(username, seedGroup);
-        } else {
-            // 如果分组为空，删除关系
-            bloggerRepository.deleteBelongsToRelationship(username);
-        }
-
-        // 重新加载以获取最新的完整数据
-        return bloggerRepository.findById(username).orElse(blogger);
+        // 使用优化的单次查询方法，将原来的多次数据库往返合并为一次
+        // 这个方法会：
+        // 1. 创建或更新 Blogger 节点
+        // 2. 自动恢复已放弃的博主
+        // 3. 处理 SeedGroup 关系（删除旧关系、创建新关系）
+        // 4. 只返回基本字段（不加载 followings/followers/posts 等关系），避免性能问题
+        return bloggerRepository.addOrUpdateBloggerOptimized(username, seedGroup)
+                .orElseThrow(() -> new RuntimeException("添加博主失败: " + username));
     }
 
     public List<AnalysisResult> findCommonFollows(String project, int minFollows) {

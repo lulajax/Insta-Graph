@@ -235,4 +235,39 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         MERGE (b)-[:BELONGS_TO]->(g)
     """)
     void fixBelongsToRelationship(@Param("username") String username, @Param("groupName") String groupName);
+
+    /**
+     * 优化的添加或更新博主方法（一次性完成所有操作，避免多次数据库往返）
+     * 只返回基本字段，不加载关系，显著提升性能
+     */
+    @Query("""
+        // 1. 创建或匹配博主节点
+        MERGE (b:Blogger {username: $username})
+        ON CREATE SET b.seed_group = $seedGroup
+
+        // 2. 如果博主已被放弃，自动恢复
+        SET b.abandoned = CASE WHEN b.abandoned = true THEN false ELSE b.abandoned END,
+            b.abandonedAt = CASE WHEN b.abandoned = true THEN null ELSE b.abandonedAt END,
+            b.abandonedReason = CASE WHEN b.abandoned = true THEN null ELSE b.abandonedReason END
+
+        // 3. 处理分组关系（删除旧关系）
+        WITH b
+        OPTIONAL MATCH (b)-[oldRel:BELONGS_TO]->(:SeedGroup)
+        DELETE oldRel
+
+        // 4. 使用 FOREACH 实现条件更新，避免作用域冲突
+        WITH b
+        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
+            SET b.seed_group = $seedGroup
+            MERGE (g:SeedGroup {name: $seedGroup})
+            MERGE (b)-[:BELONGS_TO]->(g)
+        )
+        FOREACH (_ IN CASE WHEN $seedGroup IS NULL OR $seedGroup = '' THEN [1] ELSE [] END |
+            SET b.seed_group = null
+        )
+
+        // 5. 返回博主基本信息（不加载关系）
+        RETURN b
+    """)
+    Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup);
 }
