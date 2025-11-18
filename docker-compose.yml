@@ -8,19 +8,59 @@ services:
       - "7474:7474" # HTTP
       - "7687:7687" # Bolt
     volumes:
-      - ./neo4j/data:/data
-      - ./neo4j/logs:/logs
+      - neo4j_data:/data
+      - neo4j_logs:/logs
     environment:
-      - NEO4J_AUTH=neo4j/password # Default user/password
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]  # Optional: APOC plugin
+      - NEO4J_dbms_memory_heap_initial__size=512m
+      - NEO4J_dbms_memory_heap_max__size=2G
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p password 'RETURN 1;' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - insta-graph-network
+    restart: unless-stopped
 
   insta-graph-app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: insta_graph_app
     ports:
       - "8080:8080"
     depends_on:
-      - neo4j
+      neo4j:
+        condition: service_healthy
     environment:
       - SPRING_NEO4J_URI=bolt://neo4j:7687
       - SPRING_NEO4J_AUTHENTICATION_USERNAME=neo4j
       - SPRING_NEO4J_AUTHENTICATION_PASSWORD=password
+      # Tikhub API configuration - set your key here or use .env file
+      - TIKHUB_API_X_RAPIDAPI_KEY=${TIKHUB_API_KEY:-}
+      # JVM options for production
+      - JAVA_OPTS=-Xms256m -Xmx1g -XX:+UseG1GC
+    volumes:
+      - ./logs:/app/logs  # Application logs
+    networks:
+      - insta-graph-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+
+networks:
+  insta-graph-network:
+    driver: bridge
