@@ -828,6 +828,92 @@ async function showTaggedPostsForBlogger(username) {
     }
 }
 
+// 显示晋升种子博主对话框
+async function showPromoteDialog(username) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        
+        const reasons = [
+            '舞蹈学校老师',
+            '舞蹈社团账号',
+            '模特公司账号',
+            '啦啦队账号',
+            '面试过的博主',
+            '联系过的博主',
+            '拒绝联系的博主',
+            '其他'
+        ];
+
+        const reasonOptions = reasons.map((r, i) => {
+            const isChecked = i === 0 ? 'checked' : '';
+            return `
+            <div style="margin-bottom: 0;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="radio" name="promote-reason" value="${r}" ${isChecked} 
+                           onchange="document.getElementById('other-reason-container').style.display = this.value === '其他' ? 'block' : 'none'">
+                    <span style="margin-left: 8px;">${r}</span>
+                </label>
+            </div>
+            `;
+        }).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--primary);">🌱 晋升种子博主</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 15px;">确定要将 <strong>@${username}</strong> 晋升为种子博主吗？</p>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <p style="font-weight: 500; margin-bottom: 8px; color: var(--dark);">请选择备注标签：</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            ${reasonOptions}
+                        </div>
+                    </div>
+
+                    <div id="other-reason-container" style="display: none;">
+                        <textarea id="promote-reason-text" 
+                                  rows="2" 
+                                  placeholder="请输入其他备注信息..."
+                                  style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove(); window.promoteDialogResolve(null);">
+                        取消
+                    </button>
+                    <button class="btn btn-primary" 
+                            onclick="
+                                const selected = document.querySelector('input[name=promote-reason]:checked').value;
+                                let result = selected;
+                                if (selected === '其他') {
+                                    const otherText = document.getElementById('promote-reason-text').value.trim();
+                                    result = otherText || '其他';
+                                }
+                                this.closest('.modal-overlay').remove(); 
+                                window.promoteDialogResolve(result);
+                            ">
+                        确定晋升
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        window.promoteDialogResolve = resolve;
+        document.body.appendChild(modal);
+        
+        // 点击遮罩层关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        });
+    });
+}
+
 // 晋升为种子博主
 async function promoteToSeed(username) {
     if (!state.currentProject) {
@@ -839,13 +925,9 @@ async function promoteToSeed(username) {
         state.currentProject = project;
     }
 
-    const confirmed = await showConfirm(
-        `确定要将 @${username} 晋升为种子博主吗？`,
-        '晋升种子博主',
-        '🌱'
-    );
+    const seedReason = await showPromoteDialog(username);
 
-    if (!confirmed) {
+    if (seedReason === null) {
         return;
     }
 
@@ -855,7 +937,8 @@ async function promoteToSeed(username) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: username,
-                seedGroup: state.currentProject
+                seedGroup: state.currentProject,
+                seedReason: seedReason
             })
         });
 

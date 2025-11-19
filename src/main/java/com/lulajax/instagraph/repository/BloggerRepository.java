@@ -13,7 +13,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import com.lulajax.instagraph.model.Post;
 
 @Repository
 public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
@@ -247,12 +246,15 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
     @Query("""
         // 1. 创建或匹配博主节点
         MERGE (b:Blogger {username: $username})
-        ON CREATE SET b.seed_group = $seedGroup
+        ON CREATE SET b.seed_group = $seedGroup, b.seed_reason = $seedReason
 
         // 2. 如果博主已被放弃，自动恢复
         SET b.abandoned = CASE WHEN b.abandoned = true THEN false ELSE b.abandoned END,
             b.abandonedAt = CASE WHEN b.abandoned = true THEN null ELSE b.abandonedAt END,
             b.abandonedReason = CASE WHEN b.abandoned = true THEN null ELSE b.abandonedReason END
+        
+        // 更新 seed_reason (如果提供了，非null)
+        SET b.seed_reason = CASE WHEN $seedReason IS NOT NULL THEN $seedReason ELSE b.seed_reason END
 
         // 3. 处理分组关系（删除旧关系）
         WITH b
@@ -273,7 +275,7 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         // 5. 返回博主基本信息（不加载关系）
         RETURN b
     """)
-    Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup);
+    Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup, @Param("seedReason") String seedReason);
 
     /**
      * 动态分页查询博主，并返回每个博主被标记的帖子数量

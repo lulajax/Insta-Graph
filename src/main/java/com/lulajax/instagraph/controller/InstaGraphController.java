@@ -83,7 +83,7 @@ public class InstaGraphController {
     @Operation(summary = "更新博主", description = "更新现有博主节点。")
     @Tag(name = "核心")
     public ResponseEntity<Blogger> createOrUpdateBlogger(@RequestBody Blogger blogger) {
-        Blogger savedBlogger = instaGraphService.addBlogger(blogger.getUsername(), blogger.getSeedGroup());
+        Blogger savedBlogger = instaGraphService.addBlogger(blogger.getUsername(), blogger.getSeedGroup(), blogger.getSeedReason());
         return ResponseEntity.ok(savedBlogger);
     }
 

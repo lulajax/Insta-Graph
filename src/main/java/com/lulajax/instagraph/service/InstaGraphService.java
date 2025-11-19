@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class InstaGraphService {
@@ -33,14 +31,14 @@ public class InstaGraphService {
     }
 
     @Transactional("transactionManager")
-    public Blogger addBlogger(String username, String seedGroup) {
+    public Blogger addBlogger(String username, String seedGroup, String seedReason) {
         // 使用优化的单次查询方法，将原来的多次数据库往返合并为一次
         // 这个方法会：
         // 1. 创建或更新 Blogger 节点
         // 2. 自动恢复已放弃的博主
         // 3. 处理 SeedGroup 关系（删除旧关系、创建新关系）
         // 4. 只返回基本字段（不加载 followings/followers/posts 等关系），避免性能问题
-        return bloggerRepository.addOrUpdateBloggerOptimized(username, seedGroup)
+        return bloggerRepository.addOrUpdateBloggerOptimized(username, seedGroup, seedReason)
                 .orElseThrow(() -> new RuntimeException("添加博主失败: " + username));
     }
 
