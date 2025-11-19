@@ -35,7 +35,7 @@ public class Post {
     private String caption;
 
     @Property("is_video")
-    private boolean isVideo;
+    private Boolean isVideo;
     
     @Property("shortcode")
     private String shortcode;

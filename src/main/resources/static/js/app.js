@@ -773,6 +773,61 @@ async function showCoTaggedPostsFromDataTab(username, seedGroup) {
     await showCoTaggedPosts(username, project);
 }
 
+// 显示用户被标记的所有帖子
+async function showTaggedPostsForBlogger(username) {
+    try {
+        const response = await fetch(`/api/instagraph/blogger/${username}/tagged-posts`);
+        if (!response.ok) throw new Error('获取帖子失败');
+        const posts = await response.json();
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px; max-height: 80vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--primary);">@${username} 被标记的帖子</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 15px; color: var(--gray);">
+                        共在 <strong>${posts.length}</strong> 个帖子中被标记
+                    </p>
+                    <div style="display: grid; gap: 12px;">
+                        ${posts.map(post => `
+                            <div style="padding: 15px; background: var(--light-gray); border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                    <a href="https://www.instagram.com/p/${post.shortcode}/" target="_blank"
+                                       style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                                        📷 查看帖子
+                                    </a>
+                                    <span style="font-size: 0.8rem; color: var(--gray);">
+                                        ${new Date(post.timestamp * 1000).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <p style="font-size: 0.9rem; color: var(--dark); margin: 0; white-space: pre-wrap;">${post.caption || '<em>无描述</em>'}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove();">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    } catch (error) {
+        showError('获取帖子列表失败: ' + error.message);
+    }
+}
+
 // 晋升为种子博主
 async function promoteToSeed(username) {
     if (!state.currentProject) {
@@ -1010,11 +1065,11 @@ async function showAbandonDialog(username) {
     });
 }
 
-// 显示分组选择对话框（用于“共同连接/共同帖子”）
+// 显示分组选择对话框（用于"共同连接/共同帖子"）
 async function showProjectSelectDialog(username, defaultProject) {
     const groups = Array.from(state.allProjects || []);
     if (!groups.length) {
-        showError('当前没有可用的分组，请先在“工作流程”中创建至少一个分组。');
+        showError('当前没有可用的分组，请先在"工作流程"中创建至少一个分组。');
         return null;
     }
 
@@ -1606,7 +1661,7 @@ async function loadBloggersPage() {
         if (seedGroup) params.append('seedGroup', seedGroup);
         if (abandoned !== '') params.append('abandoned', abandoned);
 
-        // 调用后端分页接口
+        // 调用后端分页接口（使用包含被标记帖子数量的端点）
         const response = await fetch(`/api/instagraph/bloggers/page?${params}`);
         if (!response.ok) {
             throw new Error('加载失败');
@@ -1626,7 +1681,7 @@ async function loadBloggersPage() {
     } catch (error) {
         console.error('加载博主失败：', error);
         document.getElementById('bloggers-table-body').innerHTML =
-            '<tr><td colspan="7" class="empty-state">加载失败</td></tr>';
+            '<tr><td colspan="8" class="empty-state">加载失败</td></tr>';
         const paginationContainer = document.getElementById('pagination-container');
         if (paginationContainer) {
             paginationContainer.style.display = 'none';
@@ -1635,15 +1690,19 @@ async function loadBloggersPage() {
 }
 
 // 渲染博主表格
-function renderBloggersTable(bloggers) {
+function renderBloggersTable(bloggerData) {
     const tbody = document.getElementById('bloggers-table-body');
 
-    if (!bloggers || bloggers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">暂无数据</td></tr>';
+    if (!bloggerData || bloggerData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">暂无数据</td></tr>';
         return;
     }
 
-    tbody.innerHTML = bloggers.map(blogger => {
+    tbody.innerHTML = bloggerData.map(data => {
+        // 处理 BloggerWithTagCount DTO 结构
+        const blogger = data.blogger || data;
+        const taggedPostCount = data.taggedPostCount !== undefined ? data.taggedPostCount : '-';
+
         // 生成分组下拉选项
         const groupOptions = `
             <option value="">-- 未分组 --</option>
@@ -1652,13 +1711,9 @@ function renderBloggersTable(bloggers) {
             ).join('')}
         `;
 
-        // 性别显示
-        const genderDisplay = blogger.gender ?
-            (blogger.gender === 'male' ? '👨 男' : blogger.gender === 'female' ? '👩 女' : blogger.gender) : '-';
-
         // 状态显示和操作按钮
         const isAbandoned = blogger.abandoned === true;
-        const statusDisplay = isAbandoned 
+        const statusDisplay = isAbandoned
             ? `<span style="color: var(--warning); cursor: help;" title="${blogger.abandonedReason ? '原因：' + blogger.abandonedReason : '已放弃'}">⛔ 已放弃</span>`
             : '<span style="color: var(--success);">✓ 活跃</span>';
 
@@ -1687,6 +1742,11 @@ function renderBloggersTable(bloggers) {
                     </select>
                 </td>
                 <td>${statusDisplay}</td>
+                <td style="text-align: center; font-weight: 500;">
+                    <a href="javascript:void(0)" onclick="showTaggedPostsForBlogger('${blogger.username}')" style="color: var(--primary); text-decoration: underline;">
+                        ${taggedPostCount}
+                    </a>
+                </td>
                 <td>${blogger.instagramId || '-'}</td>
                 <td class="actions-cell">
                     ${actionButtons}

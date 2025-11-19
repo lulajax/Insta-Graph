@@ -75,6 +75,7 @@ public class PostInfoService {
             post.setVideoDuration(postInfo.getVideoDuration());
             post.setVideoPlayCount(postInfo.getVideoPlayCount());
             post.setShortcode(postInfo.getShortcode());
+            post.setIsVideo(postInfo.isVideo());
             
             // Create or update the post owner and link to the post
             if (postInfo.getOwner() != null) {

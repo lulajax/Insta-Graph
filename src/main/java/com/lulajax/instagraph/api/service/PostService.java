@@ -78,7 +78,7 @@ public class PostService {
                 logger.debug("正在处理帖子 ID: {}", node.getId());
                 Post post = postRepository.findById(node.getId()).orElse(new Post(node.getId()));
                 post.setDisplayUrl(node.getDisplayUrl());
-                post.setVideo(node.isVideo());
+                post.setIsVideo(node.isVideo());
                 post.setShortcode(node.getShortcode());
                 if(node.getEdgeMediaToCaption() != null && !node.getEdgeMediaToCaption().getEdges().isEmpty()){
                     post.setCaption(node.getEdgeMediaToCaption().getEdges().get(0).getNode().getText());

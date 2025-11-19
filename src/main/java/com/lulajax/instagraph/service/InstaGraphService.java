@@ -1,8 +1,10 @@
 package com.lulajax.instagraph.service;
 
 import com.lulajax.instagraph.dto.AnalysisResult;
+import com.lulajax.instagraph.dto.BloggerWithTagCount;
 import com.lulajax.instagraph.dto.EnhancedAnalysisResult;
 import com.lulajax.instagraph.dto.PageResponse;
+import com.lulajax.instagraph.dto.PostDTO;
 import com.lulajax.instagraph.model.Blogger;
 import com.lulajax.instagraph.model.Post;
 import com.lulajax.instagraph.repository.BloggerRepository;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class InstaGraphService {
@@ -95,6 +99,31 @@ public class InstaGraphService {
         );
     }
 
+    /**
+     * 分页查询博主，并返回被标记的帖子数量（支持搜索和筛选）
+     */
+    public PageResponse<BloggerWithTagCount> getBloggersByPageWithTagCount(int page, int size, String keyword, String seedGroup, Boolean abandoned) {
+        long skip = (long) (page - 1) * size;
+
+        List<BloggerWithTagCount> content = bloggerRepository.findByFiltersWithPaginationAndTagCount(
+                keyword, seedGroup, abandoned, skip, size);
+
+        long totalElements = bloggerRepository.countByFilters(keyword, seedGroup, abandoned);
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        boolean isFirst = page == 1;
+        boolean isLast = page >= totalPages;
+
+        return new PageResponse<>(
+                content,
+                page,
+                size,
+                totalElements,
+                totalPages,
+                isFirst,
+                isLast
+        );
+    }
+
     public List<Post> getAllPosts() {
         return postRepository.findAll();
     }
@@ -167,5 +196,12 @@ public class InstaGraphService {
      */
     public java.util.List<com.lulajax.instagraph.dto.CoTaggedPostInfo> getCoTaggedPosts(String username, String project) {
         return bloggerRepository.findCoTaggedPosts(username, project);
+    }
+
+    /**
+     * 根据用户名查找其所有被标记的帖子，并转换为 DTO
+     */
+    public List<PostDTO> getTaggedPostsByUsername(String username) {
+        return bloggerRepository.findTaggedPostsByUsername(username);
     }
 }

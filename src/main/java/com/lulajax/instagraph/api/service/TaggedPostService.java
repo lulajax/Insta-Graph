@@ -78,7 +78,7 @@ public class TaggedPostService {
                 Post post = postRepository.findById(node.getId()).orElse(new Post(node.getId()));
                 post.setShortcode(node.getShortcode());
                 post.setDisplayUrl(node.getDisplayUrl());
-                post.setVideo(node.isVideo());
+                post.setIsVideo(node.isVideo());
                 post.setVideoViewCount(node.getVideoViewCount());
                 post.setTimestamp(node.getTakenAtTimestamp());
                 if (node.getEdgeMediaToCaption() != null && !node.getEdgeMediaToCaption().getEdges().isEmpty()) {

@@ -2,8 +2,10 @@ package com.lulajax.instagraph.controller;
 
 import com.lulajax.instagraph.dto.AnalysisResult;
 import com.lulajax.instagraph.dto.BloggerStatusResponse;
+import com.lulajax.instagraph.dto.BloggerWithTagCount;
 import com.lulajax.instagraph.dto.EnhancedAnalysisResult;
 import com.lulajax.instagraph.dto.PageResponse;
+import com.lulajax.instagraph.dto.PostDTO;
 import com.lulajax.instagraph.model.Blogger;
 import com.lulajax.instagraph.model.Post;
 import com.lulajax.instagraph.service.InstaGraphService;
@@ -44,12 +46,12 @@ public class InstaGraphController {
 
     @GetMapping("/bloggers/page")
     @Operation(
-        summary = "分页查询博主",
-        description = "支持分页、搜索和筛选的博主查询接口。" +
+        summary = "分页查询博主（包含被标记帖子数量）",
+        description = "支持分页、搜索和筛选的博主查询接口，返回每个博主被标记的帖子数量。" +
                       "可通过用户名/全名搜索，可按分组筛选。"
     )
     @Tag(name = "核心")
-    public ResponseEntity<PageResponse<Blogger>> getBloggersByPage(
+    public ResponseEntity<PageResponse<BloggerWithTagCount>> getBloggersByPage(
             @Parameter(description = "页码（从1开始）", example = "1")
             @RequestParam(defaultValue = "1") int page,
 
@@ -65,7 +67,7 @@ public class InstaGraphController {
             @Parameter(description = "是否放弃筛选（true 或 false）")
             @RequestParam(required = false) Boolean abandoned
     ) {
-        PageResponse<Blogger> response = instaGraphService.getBloggersByPage(page, size, keyword, seedGroup, abandoned);
+        PageResponse<BloggerWithTagCount> response = instaGraphService.getBloggersByPageWithTagCount(page, size, keyword, seedGroup, abandoned);
         return ResponseEntity.ok(response);
     }
 
@@ -237,6 +239,15 @@ public class InstaGraphController {
             @Parameter(description = "博主用户名", required = true) @RequestParam String username,
             @Parameter(description = "种子分组", required = true) @RequestParam String project) {
         List<com.lulajax.instagraph.dto.CoTaggedPostInfo> posts = instaGraphService.getCoTaggedPosts(username, project);
+        return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/blogger/{username}/tagged-posts")
+    @Operation(summary = "获取博主被标记的所有帖子", description = "根据博主用户名获取其被标记的所有帖子列表。")
+    @Tag(name = "核心")
+    public ResponseEntity<List<PostDTO>> getTaggedPosts(
+            @Parameter(description = "博主用户名", required = true) @PathVariable String username) {
+        List<PostDTO> posts = instaGraphService.getTaggedPostsByUsername(username);
         return ResponseEntity.ok(posts);
     }
 }

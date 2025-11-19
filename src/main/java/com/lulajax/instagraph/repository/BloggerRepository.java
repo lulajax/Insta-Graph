@@ -1,7 +1,10 @@
 package com.lulajax.instagraph.repository;
 
 import com.lulajax.instagraph.dto.AnalysisResult;
+import com.lulajax.instagraph.dto.BloggerWithTagCount;
 import com.lulajax.instagraph.dto.EnhancedAnalysisResult;
+import com.lulajax.instagraph.dto.ConnectedSeedInfo;
+import com.lulajax.instagraph.dto.PostDTO;
 import com.lulajax.instagraph.model.Blogger;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import com.lulajax.instagraph.model.Post;
 
 @Repository
 public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
@@ -181,7 +185,7 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         RETURN seed.username AS username, coTagCount AS coTagCount
         ORDER BY coTagCount DESC
     """)
-    List<com.lulajax.instagraph.dto.ConnectedSeedInfo> findConnectedSeeds(@Param("username") String username, @Param("project") String project);
+    List<ConnectedSeedInfo> findConnectedSeeds(@Param("username") String username, @Param("project") String project);
 
     /**
      * 获取博主与种子博主共同被标记的帖子列表
@@ -270,4 +274,47 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         RETURN b
     """)
     Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup);
+
+    /**
+     * 动态分页查询博主，并返回每个博主被标记的帖子数量
+     */
+    @Query("""
+        MATCH (b:Blogger)
+        WHERE
+            CASE
+                WHEN $keyword IS NULL OR $keyword = '' THEN true
+                ELSE toLower(b.username) CONTAINS toLower($keyword)
+                     OR toLower(b.full_name) CONTAINS toLower($keyword)
+            END
+            AND CASE
+                WHEN $seedGroup IS NULL OR $seedGroup = '' THEN true
+                WHEN $seedGroup = '__NO_GROUP__' THEN b.seed_group IS NULL
+                ELSE b.seed_group = $seedGroup
+            END
+            AND CASE
+                WHEN $abandoned = true THEN b.abandoned = true
+                WHEN $abandoned = false THEN (b.abandoned IS NULL OR b.abandoned = false)
+                ELSE true
+            END
+
+        // 使用 OPTIONAL MATCH 以包含没有被标记在任何帖子中的博主
+        OPTIONAL MATCH (b)-[:TAGGED_IN]->(p:Post)
+        WITH b, COUNT(p) AS taggedPostCount
+
+        RETURN b AS blogger, taggedPostCount
+        ORDER BY b.username
+        SKIP $skip LIMIT $limit
+    """)
+    List<BloggerWithTagCount> findByFiltersWithPaginationAndTagCount(
+            @Param("keyword") String keyword,
+            @Param("seedGroup") String seedGroup,
+            @Param("abandoned") Boolean abandoned,
+            @Param("skip") long skip,
+            @Param("limit") int limit);
+    
+    /**
+     * 根据用户名查找其所有被标记的帖子
+     */
+    @Query("MATCH (b:Blogger {username: $username})-[:TAGGED_IN]->(p:Post) RETURN p.shortcode AS shortcode, p.caption AS caption, p.timestamp AS timestamp ORDER BY p.timestamp DESC")
+    List<PostDTO> findTaggedPostsByUsername(@Param("username") String username);
 }
