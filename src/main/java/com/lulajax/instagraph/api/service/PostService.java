@@ -6,6 +6,7 @@ import com.lulajax.instagraph.model.Post;
 import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.repository.BloggerRepository;
 import com.lulajax.instagraph.repository.PostRepository;
+import com.lulajax.instagraph.service.ApiLogService;
 import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
@@ -23,12 +24,14 @@ public class PostService {
     private final PostRepository postRepository;
     private final TikhubApiProperties tikhubApiProperties;
     private final BloggerService bloggerService;
+    private final ApiLogService apiLogService;
 
-    public PostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
+    public PostService(BloggerRepository bloggerRepository, PostRepository postRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService, ApiLogService apiLogService) {
         this.bloggerRepository = bloggerRepository;
         this.postRepository = postRepository;
         this.tikhubApiProperties = tikhubApiProperties;
         this.bloggerService = bloggerService;
+        this.apiLogService = apiLogService;
     }
 
     public UserPostResponse testParseUserPosts(String json) {
@@ -61,6 +64,7 @@ public class PostService {
                 .execute()
                 .body();
         logger.debug("API 响应: {}", result);
+        apiLogService.saveLog("PostService", url, result);
 
         UserPostResponse response = null;
         try {
@@ -80,6 +84,9 @@ public class PostService {
                 post.setDisplayUrl(node.getDisplayUrl());
                 post.setIsVideo(node.isVideo());
                 post.setShortcode(node.getShortcode());
+                post.setVideoViewCount(node.getVideoViewCount());
+                post.setCommentCount(node.getEdgeMediaToComment().getCount());
+                post.setLikeCount(node.getEdgeMediaPreviewLike().getCount());
                 if(node.getEdgeMediaToCaption() != null && !node.getEdgeMediaToCaption().getEdges().isEmpty()){
                     post.setCaption(node.getEdgeMediaToCaption().getEdges().get(0).getNode().getText());
                 }

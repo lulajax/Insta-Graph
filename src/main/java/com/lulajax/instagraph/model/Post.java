@@ -49,6 +49,9 @@ public class Post {
     @Property("video_view_count")
     private Integer videoViewCount;
 
+    @Property("comment_count")
+    private Integer commentCount;
+
     @Property("title")
     private String title;
     

@@ -2,9 +2,11 @@ package com.lulajax.instagraph.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class UserPostResponse extends BaseApiResponse {
     private UserPostDataWrapper data;
 
@@ -30,6 +32,7 @@ public class UserPostResponse extends BaseApiResponse {
         @JsonProperty("page_info")
         private PageInfo pageInfo;
         private List<UserPostEdge> edges;
+        
     }
 
     @Data
@@ -57,6 +60,14 @@ public class UserPostResponse extends BaseApiResponse {
         private List<DisplayResource> displayResources;
         @JsonProperty("is_video")
         private boolean isVideo;
+        @JsonProperty("video_view_count")
+        private Integer videoViewCount;
+        @JsonProperty("product_type")
+        private String productType;
+        @JsonProperty("video_url")
+        private String videoUrl;
+        @JsonProperty("has_audio")
+        private Boolean hasAudio;
         @JsonProperty("media_preview")
         private String mediaPreview;
         @JsonProperty("tracking_token")
@@ -99,7 +110,7 @@ public class UserPostResponse extends BaseApiResponse {
         private Object sensitivityFrictionInfo;
         @JsonProperty("sharing_friction_info")
         private Object sharingFrictionInfo;
-        private Object location;
+        private Location location;
         @JsonProperty("nft_asset_info")
         private Object nftAssetInfo;
         private Owner owner;
@@ -122,6 +133,15 @@ public class UserPostResponse extends BaseApiResponse {
         @JsonProperty("edge_media_preview_like")
         private EdgeMediaPreviewLike edgeMediaPreviewLike;
         private Dimensions dimensions;
+    }
+
+    @Data
+    public static class Location {
+        private String id;
+        @JsonProperty("has_public_page")
+        private boolean hasPublicPage;
+        private String name;
+        private String slug;
     }
 
     @Data

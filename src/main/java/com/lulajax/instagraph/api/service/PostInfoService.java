@@ -8,6 +8,7 @@ import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.repository.BloggerRepository;
 import com.lulajax.instagraph.repository.LocationRepository;
 import com.lulajax.instagraph.repository.PostRepository;
+import com.lulajax.instagraph.service.ApiLogService;
 import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
@@ -25,13 +26,15 @@ public class PostInfoService {
     private final LocationRepository locationRepository;
     private final TikhubApiProperties tikhubApiProperties;
     private final BloggerService bloggerService;
+    private final ApiLogService apiLogService;
 
-    public PostInfoService(PostRepository postRepository, BloggerRepository bloggerRepository, LocationRepository locationRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
+    public PostInfoService(PostRepository postRepository, BloggerRepository bloggerRepository, LocationRepository locationRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService, ApiLogService apiLogService) {
         this.postRepository = postRepository;
         this.bloggerRepository = bloggerRepository;
         this.locationRepository = locationRepository;
         this.tikhubApiProperties = tikhubApiProperties;
         this.bloggerService = bloggerService;
+        this.apiLogService = apiLogService;
     }
 
     public PostInfoResponse testParsePostInfo(String json) {
@@ -57,6 +60,7 @@ public class PostInfoService {
                 .header("x-rapidapi-key", tikhubApiProperties.getXRapidapiKey())                .execute()
                 .body();
         logger.debug("API 响应: {}", result);
+        apiLogService.saveLog("PostInfoService", url, result);
 
         PostInfoResponse response = JsonUtil.parseObject(result, PostInfoResponse.class);
 
@@ -75,7 +79,10 @@ public class PostInfoService {
             post.setVideoDuration(postInfo.getVideoDuration());
             post.setVideoPlayCount(postInfo.getVideoPlayCount());
             post.setShortcode(postInfo.getShortcode());
-            post.setIsVideo(postInfo.isVideo());
+            // post.setIsVideo(postInfo.isVideo());
+            // post.setVideoViewCount(postInfo.getVideoViewCount());
+            // post.setCommentCount(postInfo.getEdgeMediaToParentComment().getCount());
+            // post.setLikeCount(postInfo.getEdgeMediaPreviewLike().getCount());
             
             // Create or update the post owner and link to the post
             if (postInfo.getOwner() != null) {

@@ -2,9 +2,11 @@ package com.lulajax.instagraph.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class TaggedPostResponse extends BaseApiResponse {
     private TaggedPostDataWrapper data;
 
@@ -48,22 +50,36 @@ public class TaggedPostResponse extends BaseApiResponse {
     @Data
     public static class PostNode {
         private String id;
+        @JsonProperty("__typename")
+        private String typename;
         @JsonProperty("shortcode")
         private String shortcode;
-        @JsonProperty("display_url")
-        private String displayUrl;
-        @JsonProperty("is_video")
-        private boolean isVideo;
-        @JsonProperty("video_view_count")
-        private Integer videoViewCount;
+        @JsonProperty("edge_media_to_comment")
+        private EdgeMediaToComment edgeMediaToComment;
+        @JsonProperty("comments_disabled")
+        private boolean commentsDisabled;
         @JsonProperty("taken_at_timestamp")
         private long takenAtTimestamp;
         private Dimensions dimensions;
-        private Owner owner;
-        @JsonProperty("edge_media_to_caption")
-        private EdgeMediaToCaption edgeMediaToCaption;
+        @JsonProperty("display_url")
+        private String displayUrl;
         @JsonProperty("edge_liked_by")
         private EdgeLikedBy edgeLikedBy;
+        @JsonProperty("edge_media_preview_like")
+        private EdgeMediaPreviewLike edgeMediaPreviewLike;
+        private Owner owner;
+        @JsonProperty("thumbnail_src")
+        private String thumbnailSrc;
+        @JsonProperty("is_video")
+        private boolean isVideo;
+        @JsonProperty("has_upcoming_event")
+        private boolean hasUpcomingEvent;
+        @JsonProperty("video_view_count")
+        private Integer videoViewCount;
+        @JsonProperty("product_type")
+        private String productType;
+        @JsonProperty("edge_media_to_caption")
+        private EdgeMediaToCaption edgeMediaToCaption;
     }
 
     @Data
@@ -95,6 +111,16 @@ public class TaggedPostResponse extends BaseApiResponse {
 
     @Data
     public static class EdgeLikedBy {
+        private int count;
+    }
+
+    @Data
+    public static class EdgeMediaToComment {
+        private int count;
+    }
+
+    @Data
+    public static class EdgeMediaPreviewLike {
         private int count;
     }
 }

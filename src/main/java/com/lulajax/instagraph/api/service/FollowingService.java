@@ -4,6 +4,7 @@ import com.lulajax.instagraph.api.dto.FollowingResponse;
 import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.model.Blogger;
 import com.lulajax.instagraph.repository.BloggerRepository;
+import com.lulajax.instagraph.service.ApiLogService;
 import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
@@ -21,11 +22,13 @@ public class FollowingService {
     private final BloggerRepository bloggerRepository;
     private final TikhubApiProperties tikhubApiProperties;
     private final BloggerService bloggerService;
+    private final ApiLogService apiLogService;
 
-    public FollowingService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
+    public FollowingService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService, ApiLogService apiLogService) {
         this.bloggerRepository = bloggerRepository;
         this.tikhubApiProperties = tikhubApiProperties;
         this.bloggerService = bloggerService;
+        this.apiLogService = apiLogService;
     }
 
     public FollowingResponse testParseUserFollowing(String json) {
@@ -51,6 +54,7 @@ public class FollowingService {
                 .execute()
                 .body();
         logger.debug("API 响应: {}", result);
+        apiLogService.saveLog("FollowingService", url, result);
 
         FollowingResponse response = JsonUtil.parseObject(result, FollowingResponse.class);
         if (response != null && response.getData() != null && response.getData().getData() != null && response.getData().getData().getItems() != null) {

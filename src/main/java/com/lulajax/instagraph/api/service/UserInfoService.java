@@ -5,6 +5,7 @@ import com.lulajax.instagraph.api.dto.UserInfoV3Response;
 import com.lulajax.instagraph.config.TikhubApiProperties;
 import com.lulajax.instagraph.model.Blogger;
 import com.lulajax.instagraph.repository.BloggerRepository;
+import com.lulajax.instagraph.service.ApiLogService;
 import com.lulajax.instagraph.service.BloggerService;
 import com.lulajax.instagraph.util.HttpUtil;
 import com.lulajax.instagraph.util.JsonUtil;
@@ -20,11 +21,13 @@ public class UserInfoService {
     private final BloggerRepository bloggerRepository;
     private final TikhubApiProperties tikhubApiProperties;
     private final BloggerService bloggerService;
+    private final ApiLogService apiLogService;
 
-    public UserInfoService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService) {
+    public UserInfoService(BloggerRepository bloggerRepository, TikhubApiProperties tikhubApiProperties, BloggerService bloggerService, ApiLogService apiLogService) {
         this.bloggerRepository = bloggerRepository;
         this.tikhubApiProperties = tikhubApiProperties;
         this.bloggerService = bloggerService;
+        this.apiLogService = apiLogService;
     }
 
     public UserInfoV3Response testParseUserInfoV3(String json) {
@@ -50,6 +53,7 @@ public class UserInfoService {
                 .execute()
                 .body();
         logger.debug("API 响应: {}", result);
+        apiLogService.saveLog("UserInfoServiceV3", url, result);
 
         UserInfoV3Response response = JsonUtil.parseObject(result, UserInfoV3Response.class);
         if (response != null && response.getData() != null && response.getData().getData() != null) {
@@ -85,6 +89,7 @@ public class UserInfoService {
                 .execute()
                 .body();
         logger.debug("API 响应: {}", result);
+        apiLogService.saveLog("UserInfoServiceV2", url, result);
 
         UserInfoV2Response response = JsonUtil.parseObject(result, UserInfoV2Response.class);
         if (response != null && response.getData() != null) {
