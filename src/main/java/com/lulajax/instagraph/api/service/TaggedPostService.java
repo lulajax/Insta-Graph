@@ -52,7 +52,7 @@ public class TaggedPostService {
         Blogger taggedBlogger = bloggerRepository.findByInstagramId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Blogger with Instagram ID " + userId + " not found."));
 
-        String url = tikhubApiProperties.getUrl().get("fetch-user-tagged-posts-by-user-id") + "?user_id=" + userId + "&count=1";
+        String url = tikhubApiProperties.getUrl().get("fetch-user-tagged-posts-by-user-id") + "?user_id=" + userId + "&count=20";
         logger.debug("请求URL: {}", url);
         String result = HttpUtil.createGet(url)
                 .header("x-rapidapi-host", tikhubApiProperties.getXRapidapiHost())
