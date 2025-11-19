@@ -1,6 +1,7 @@
 package com.lulajax.instagraph.controller;
 
 import com.lulajax.instagraph.dto.AnalysisResult;
+import com.lulajax.instagraph.dto.BloggerDto;
 import com.lulajax.instagraph.dto.BloggerStatusResponse;
 import com.lulajax.instagraph.dto.BloggerWithTagCount;
 import com.lulajax.instagraph.dto.EnhancedAnalysisResult;
@@ -71,11 +72,11 @@ public class InstaGraphController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/blogger/{id}")
+    @GetMapping("/blogger/{username}")
     @Operation(summary = "根据ID获取博主信息", description = "返回指定ID博主的详细信息及其关系。")
     @Tag(name = "核心")
-    public ResponseEntity<Blogger> getBloggerById(@PathVariable String id) {
-        Blogger blogger = instaGraphService.getBloggerById(id);
+    public ResponseEntity<BloggerDto> getBloggerById(@PathVariable String username) {
+        BloggerDto blogger = instaGraphService.getBloggerByUsername(username);
         return ResponseEntity.ok(blogger);
     }
 
@@ -199,7 +200,7 @@ public class InstaGraphController {
     @Tag(name = "核心")
     public ResponseEntity<BloggerStatusResponse> getBloggerStatus(
             @Parameter(description = "博主用户名", required = true) @PathVariable String username) {
-        Blogger blogger = instaGraphService.getBloggerById(username);
+        BloggerDto blogger = instaGraphService.getBloggerByUsername(username);
         
         if (blogger == null) {
             // 博主不存在

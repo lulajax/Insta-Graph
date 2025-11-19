@@ -1,6 +1,7 @@
 package com.lulajax.instagraph.repository;
 
 import com.lulajax.instagraph.dto.AnalysisResult;
+import com.lulajax.instagraph.dto.BloggerDto;
 import com.lulajax.instagraph.dto.BloggerWithTagCount;
 import com.lulajax.instagraph.dto.EnhancedAnalysisResult;
 import com.lulajax.instagraph.dto.ConnectedSeedInfo;
@@ -16,6 +17,27 @@ import java.util.Optional;
 
 @Repository
 public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
+    @Query("MATCH (b:Blogger {username: $username}) RETURN " +
+           "b.username AS username, " +
+           "b.seed_group AS seedGroup, " +
+           "b.seed_reason AS seedReason, " +
+           "b.bio AS bio, " +
+           "b.gender AS gender, " +
+           "b.instagram_id AS instagramId, " +
+           "b.country AS country, " +
+           "b.date_joined AS dateJoined, " +
+           "b.date_joined_as_timestamp AS dateJoinedAsTimestamp, " +
+           "b.date_verified AS dateVerified, " +
+           "b.date_verified_as_timestamp AS dateVerifiedAsTimestamp, " +
+           "b.former_usernames AS formerUsernames, " +
+           "b.is_verified AS isVerified, " +
+           "b.is_private AS isPrivate, " +
+           "b.full_name AS fullName, " +
+           "b.abandoned AS abandoned, " +
+           "b.abandoned_at AS abandonedAt, " +
+           "b.abandoned_reason AS abandonedReason")
+    Optional<BloggerDto> findProjectedByUsername(@Param("username") String username);
+
     Optional<Blogger> findByInstagramId(Long instagramId);
 
     /**

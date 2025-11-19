@@ -1,6 +1,7 @@
 package com.lulajax.instagraph.service;
 
 import com.lulajax.instagraph.dto.AnalysisResult;
+import com.lulajax.instagraph.dto.BloggerDto;
 import com.lulajax.instagraph.dto.BloggerWithTagCount;
 import com.lulajax.instagraph.dto.EnhancedAnalysisResult;
 import com.lulajax.instagraph.dto.PageResponse;
@@ -126,9 +127,11 @@ public class InstaGraphService {
         return postRepository.findAll();
     }
 
-    public Blogger getBloggerById(String id) {
+    public BloggerDto getBloggerByUsername(String username) {
         // Using username as the ID in this context
-        return bloggerRepository.findById(id).orElse(null);
+        // 使用投影查询只获取基本字段，避免加载 followers 等重型关系
+        return bloggerRepository.findProjectedByUsername(username)
+            .orElse(null);
     }
 
     @Transactional("transactionManager")
