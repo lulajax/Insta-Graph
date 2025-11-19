@@ -278,6 +278,31 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
     Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup, @Param("seedReason") String seedReason);
 
     /**
+     * 优化的 getOrCreateBloggerByInstagramId，基于 Username MERGE
+     * 仅在博主当前没有分组时才更新分组
+     */
+    @Query("""
+        MERGE (b:Blogger {username: $username})
+        ON CREATE SET b.seed_group = $seedGroup, b.instagram_id = $instagramId
+        
+        // 总是尝试设置 instagramId (如果原来是 null)
+        SET b.instagram_id = COALESCE(b.instagram_id, $instagramId)
+        
+        WITH b
+        // 如果当前 seed_group 为空，且传入了 seed_group，则需要更新
+        FOREACH (_ IN CASE WHEN b.seed_group IS NULL AND $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
+            SET b.seed_group = $seedGroup
+            MERGE (g:SeedGroup {name: $seedGroup})
+            MERGE (b)-[:BELONGS_TO]->(g)
+        )
+        
+        RETURN b
+    """)
+    Optional<Blogger> getOrCreateBloggerOptimized(@Param("instagramId") Long instagramId, 
+                                                  @Param("username") String username, 
+                                                  @Param("seedGroup") String seedGroup);
+
+    /**
      * 动态分页查询博主，并返回每个博主被标记的帖子数量
      */
     @Query("""
