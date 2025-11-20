@@ -300,10 +300,28 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
     Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup, @Param("seedReason") String seedReason);
 
     /**
-     * 优化的 getOrCreateBloggerByInstagramId，基于 Username MERGE
-     * 仅在博主当前没有分组时才更新分组
+     * 优化的 getOrCreateBloggerByInstagramId，增强了对改名情况的处理
+     * 1. 优先根据 instagramId 匹配，如果匹配到但用户名不同，会自动更新用户名（并删除旧用户名的占位节点）
+     * 2. 如果没有 instagramId 或没匹配到，退回使用 username 匹配
      */
     @Query("""
+        // 0. 预处理：查找可能存在的冲突节点
+        OPTIONAL MATCH (b_by_id:Blogger) 
+        WHERE $instagramId IS NOT NULL AND b_by_id.instagram_id = $instagramId
+        
+        OPTIONAL MATCH (b_by_name:Blogger {username: $username})
+        
+        // 1. 解决冲突：如果 ID 匹配和 Name 匹配指向不同节点，删除 Name 匹配的那个（视为过时的或占位的）
+        FOREACH (_ IN CASE WHEN b_by_id IS NOT NULL AND b_by_name IS NOT NULL AND b_by_id <> b_by_name THEN [1] ELSE [] END |
+            DETACH DELETE b_by_name
+        )
+        
+        // 2. 准备主节点：如果有 ID 匹配的（现在可能改名了），更新它的名字以便后续 MERGE 能够命中它
+        FOREACH (_ IN CASE WHEN b_by_id IS NOT NULL THEN [1] ELSE [] END |
+            SET b_by_id.username = $username
+        )
+        
+        // 3. 标准 MERGE 流程
         MERGE (b:Blogger {username: $username})
         ON CREATE SET b.seed_group = $seedGroup, b.instagram_id = $instagramId
         
@@ -366,4 +384,16 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
      */
     @Query("MATCH (b:Blogger {username: $username})-[:TAGGED_IN]->(p:Post) RETURN p.shortcode AS shortcode, p.caption AS caption, p.timestamp AS timestamp ORDER BY p.timestamp DESC")
     List<PostDTO> findTaggedPostsByUsername(@Param("username") String username);
+
+    @Query("MATCH (follower:Blogger {username: $follower}), (followed:Blogger {username: $followed}) MERGE (follower)-[:FOLLOWS]->(followed)")
+    void createFollowRelationship(@Param("follower") String follower, @Param("followed") String followed);
+
+    @Query("MATCH (blogger:Blogger {username: $username}), (post:Post {id: $postId}) MERGE (blogger)-[:POSTED]->(post)")
+    void createPostedRelationship(@Param("username") String username, @Param("postId") String postId);
+
+    @Query("MATCH (blogger:Blogger {username: $username}), (post:Post {id: $postId}) MERGE (blogger)-[:LIKED]->(post)")
+    void createLikedRelationship(@Param("username") String username, @Param("postId") String postId);
+
+    @Query("MATCH (blogger:Blogger {username: $username}), (post:Post {id: $postId}) MERGE (blogger)-[:TAGGED_IN]->(post)")
+    void createTaggedInRelationship(@Param("username") String username, @Param("postId") String postId);
 }

@@ -116,4 +116,10 @@ public class UserInfoService {
         logger.warn("未能获取到用户 {} 的有效信息", username);
         return null;
     }
+
+    public void updateBloggerAggregationReason(String username, String aggregationReason) {
+        Blogger blogger = bloggerRepository.findById(username).orElseThrow(() -> new RuntimeException("用户不存在: " + username));
+        blogger.setAggregationReason(aggregationReason);
+        bloggerRepository.save(blogger);
+    }
 }

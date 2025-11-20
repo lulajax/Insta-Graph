@@ -4,21 +4,18 @@ import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
 import org.springframework.data.neo4j.core.schema.Relationship;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 @Node("Blogger")
 @Getter
 @Setter
-@ToString(exclude = {"followings", "followers", "posts", "likedPosts", "taggedInPosts", "belongsToGroup"})
+@ToString(exclude = {"belongsToGroup"})
 @AllArgsConstructor
 @NoArgsConstructor
 public class Blogger {
@@ -82,26 +79,8 @@ public class Blogger {
     @Property("abandoned_reason")
     private String abandonedReason;  // 放弃原因（可选）
 
-    @JsonIgnore
-    @Relationship(type = "FOLLOWS", direction = Relationship.Direction.OUTGOING)
-    private Set<Blogger> followings = new HashSet<>();
-
-    @JsonIgnore
-    @Relationship(type = "FOLLOWS", direction = Relationship.Direction.INCOMING)
-    private Set<Blogger> followers = new HashSet<>();
-
-    @JsonIgnore
-    @Relationship(type = "POSTED", direction = Relationship.Direction.OUTGOING)
-    private Set<Post> posts = new HashSet<>();
-
-    @JsonIgnore
-    @Relationship(type = "LIKED", direction = Relationship.Direction.OUTGOING)
-    private Set<Post> likedPosts = new HashSet<>();
-
-    @JsonIgnore
-    @Relationship(type = "TAGGED_IN", direction = Relationship.Direction.OUTGOING)
-    private Set<Post> taggedInPosts = new HashSet<>();
-
+    @Property("aggregation_reason")
+    private String aggregationReason;  // 聚合原因（可选）
 
     public Blogger(String username) {
         this.username = username;

@@ -37,18 +37,21 @@ public class AggregationService {
                 blogger = userInfoService.fetchUserInfoByUsernameV2(username);
             } catch (Exception e2) {
                 logger.error("无法获取用户 {} 的基本信息或 Instagram ID", username);
-                return null;
+                userInfoService.updateBloggerAggregationReason(username, "无法获取用户 " + username + " 的基本信息或 Instagram ID");
+                throw new RuntimeException("无法获取用户 " + username + " 的基本信息或 Instagram ID");
             }
         }
         if (blogger == null || blogger.getInstagramId() == null) {
             logger.error("无法获取用户 {} 的基本信息或 Instagram ID", username);
-            return null;
+            userInfoService.updateBloggerAggregationReason(username, "无法获取用户 " + username + " 的基本信息或 Instagram ID");
+            throw new RuntimeException("无法获取用户 " + username + " 的基本信息或 Instagram ID");
         }
         Long userId = blogger.getInstagramId();
         logger.info("成功获取到用户 {} 的信息，Instagram ID: {}", username, userId);
 
         if (blogger.getIsPrivate() != null && blogger.getIsPrivate()) {
             logger.info("用户 {} 是私密账户，跳过被标记帖子的获取", username);
+            userInfoService.updateBloggerAggregationReason(username, "用户是私密账户，无法采集数据");
             throw new RuntimeException("用户是私密账户，无法采集数据");
         }
         

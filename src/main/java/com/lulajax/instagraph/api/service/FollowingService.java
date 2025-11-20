@@ -75,12 +75,13 @@ public class FollowingService {
                 if (item.getIsVerified() != null) {
                     followed.setIsVerified(item.getIsVerified());
                 }
-                follower.getFollowings().add(followed);
-                followed.getFollowers().add(follower);
+                // follower.getFollowings().add(followed);
+                // followed.getFollowers().add(follower);
                 bloggerRepository.save(followed);
+                bloggerRepository.createFollowRelationship(follower.getUsername(), followed.getUsername());
                 logger.debug("已建立 {} -> {} 的关注关系", follower.getUsername(), followed.getUsername());
             }
-            bloggerRepository.save(follower);
+            // bloggerRepository.save(follower);
             logger.info("用户 {} 的关注列表处理完毕", username);
         } else {
             logger.warn("未能获取用户 {} 的关注列表，或列表为空", username);

@@ -67,6 +67,8 @@ public class TaggedPostService {
         try {
             response = JsonUtil.parseObject(result, TaggedPostResponse.class);
         } catch (Exception e) {
+            taggedBlogger.setAggregationReason("无法采集，用户可能不存在被标记的帖子，请稍后重试");
+            bloggerRepository.save(taggedBlogger);
             throw new RuntimeException("无法采集，用户可能不存在被标记的帖子，请稍后重试");
         }
 
@@ -110,15 +112,17 @@ public class TaggedPostService {
                     ownerDto.getUsername(), 
                     "default"
                 );
-                owner.getPosts().add(post);
-                post.setOwner(owner);
+                // owner.getPosts().add(post);
+                // post.setOwner(owner);
                 bloggerRepository.save(owner);
+                bloggerRepository.createPostedRelationship(owner.getUsername(), post.getId());
                 
                 // Link the tagged blogger to the post
-                post.getTaggedInUsers().add(taggedBlogger);
-                taggedBlogger.getTaggedInPosts().add(post);
-                postRepository.save(post);
+                // post.getTaggedInUsers().add(taggedBlogger);
+                // taggedBlogger.getTaggedInPosts().add(post);
+                // postRepository.save(post);
                 bloggerRepository.save(taggedBlogger);
+                bloggerRepository.createTaggedInRelationship(taggedBlogger.getUsername(), post.getId());
             }
             logger.info("用户 {} 被标记的帖子列表处理完毕", taggedBlogger.getUsername());
         } else {

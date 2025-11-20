@@ -94,9 +94,10 @@ public class PostInfoService {
                     "default"
                 );
                 // Manually update both sides of the relationship
-                owner.getPosts().add(post);
-                post.setOwner(owner);
+                // owner.getPosts().add(post);
+                // post.setOwner(owner);
                 bloggerRepository.save(owner);
+                bloggerRepository.createPostedRelationship(owner.getUsername(), post.getId());
             }
 
             // Location
@@ -110,6 +111,7 @@ public class PostInfoService {
                 locationRepository.save(location);
                 post.setLocation(location);
             }
+            postRepository.save(post);
 
             // Tagged Users
             if(postInfo.getEdgeMediaToTaggedUser() != null){
@@ -127,9 +129,10 @@ public class PostInfoService {
                         taggedBlogger.setFullName(userDto.getFullName());
                     }
                     // Manually update both sides of the relationship
-                    post.getTaggedInUsers().add(taggedBlogger);
-                    taggedBlogger.getTaggedInPosts().add(post);
+                    // post.getTaggedInUsers().add(taggedBlogger);
+                    // taggedBlogger.getTaggedInPosts().add(post);
                     bloggerRepository.save(taggedBlogger);
+                    bloggerRepository.createTaggedInRelationship(taggedBlogger.getUsername(), post.getId());
                 }
             }    
 
@@ -145,13 +148,13 @@ public class PostInfoService {
                         "default"
                     );
                     // Manually update both sides of the relationship
-                    post.getLikedBy().add(liker);
-                    liker.getLikedPosts().add(post);
+                    // post.getLikedBy().add(liker);
+                    // liker.getLikedPosts().add(post);
                     bloggerRepository.save(liker);
+                    bloggerRepository.createLikedRelationship(liker.getUsername(), post.getId());
                 }
             }
 
-            postRepository.save(post);
             logger.info("帖子 {} 的详细信息处理完毕", postId);
         } else {
             logger.warn("未能获取帖子 {} 的详细信息，或信息为空", postId);

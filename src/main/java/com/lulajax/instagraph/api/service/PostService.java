@@ -90,6 +90,7 @@ public class PostService {
                 if(node.getEdgeMediaToCaption() != null && !node.getEdgeMediaToCaption().getEdges().isEmpty()){
                     post.setCaption(node.getEdgeMediaToCaption().getEdges().get(0).getNode().getText());
                 }
+                postRepository.save(post);
 
                 // Tagged Users
                 if(node.getEdgeMediaToTaggedUser() != null){
@@ -107,9 +108,10 @@ public class PostService {
                             taggedBlogger.setFullName(userDto.getFullName());
                         }
                         // Manually update both sides of the relationship
-                        post.getTaggedInUsers().add(taggedBlogger);
-                        taggedBlogger.getTaggedInPosts().add(post);
+                        // post.getTaggedInUsers().add(taggedBlogger);
+                        // taggedBlogger.getTaggedInPosts().add(post);
                         bloggerRepository.save(taggedBlogger);
+                        bloggerRepository.createTaggedInRelationship(taggedBlogger.getUsername(), post.getId());
                     }
                 }
 
@@ -125,17 +127,18 @@ public class PostService {
                             "default"
                         );
                         // Manually update both sides of the relationship
-                        post.getLikedBy().add(liker);
-                        liker.getLikedPosts().add(post);
+                        // post.getLikedBy().add(liker);
+                        // liker.getLikedPosts().add(post);
                         bloggerRepository.save(liker);
+                        bloggerRepository.createLikedRelationship(liker.getUsername(), post.getId());
                     }
                 }
                 
-                postRepository.save(post);
-                blogger.getPosts().add(post);
-                post.setOwner(blogger);
+                // blogger.getPosts().add(post);
+                // post.setOwner(blogger);
+                bloggerRepository.createPostedRelationship(blogger.getUsername(), post.getId());
             }
-            bloggerRepository.save(blogger);
+            // bloggerRepository.save(blogger);
             logger.info("用户 {} 的帖子列表处理完毕", blogger.getUsername());
         } else {
             logger.warn("未能获取用户 (ID: {}) 的帖子列表，或列表为空", userId);
