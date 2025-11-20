@@ -59,7 +59,7 @@ public class UserInfoService {
         if (response != null && response.getData() != null && response.getData().getData() != null) {
             logger.info("成功获取到用户 {} 的信息，正在更新数据库", username);
             UserInfoV3Response.UserInfoV3 userInfoV3 = response.getData().getData();
-            Blogger blogger = bloggerService.getOrCreateBlogger(username);
+            Blogger blogger = bloggerService.getOrCreateBloggerByInstagramId(userInfoV3.getId(), username);
             blogger.setCountry(userInfoV3.getCountry());
             blogger.setDateJoined(userInfoV3.getDateJoined());
             blogger.setDateJoinedAsTimestamp(userInfoV3.getDateJoinedAsTimestamp());
@@ -95,19 +95,13 @@ public class UserInfoService {
         if (response != null && response.getData() != null) {
             logger.info("成功获取到用户 {} 的信息，正在更新数据库", username);
             UserInfoV2Response.UserInfoV2Data userInfoV2Data = response.getData();
-            Blogger blogger = bloggerService.getOrCreateBlogger(username);
+            Blogger blogger = bloggerService.getOrCreateBloggerByInstagramId(userInfoV2Data.getId(), username);
 
             blogger.setFullName(userInfoV2Data.getFullName());
             blogger.setBio(userInfoV2Data.getBiography());
             blogger.setIsVerified(userInfoV2Data.isVerified());
             blogger.setIsPrivate(userInfoV2Data.isPrivate());
-            if (userInfoV2Data.getId() != null) {
-                try {
-                    blogger.setInstagramId(Long.parseLong(userInfoV2Data.getId()));
-                } catch (NumberFormatException e) {
-                    logger.error("无法将ID {} 解析为Long类型", userInfoV2Data.getId(), e);
-                }
-            }
+            blogger.setInstagramId(userInfoV2Data.getId());
             
             Blogger savedBlogger = bloggerRepository.save(blogger);
             logger.info("用户信息更新完毕: {}", savedBlogger);

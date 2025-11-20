@@ -41,6 +41,8 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
 
     Optional<Blogger> findByInstagramId(Long instagramId);
 
+    Optional<Blogger> findByUsername(String username);
+
     /**
      * 动态分页查询博主（支持可选的关键词搜索和分组筛选）
      * @param keyword 搜索关键词（用户名或全名），为null或空字符串时不进行关键词筛选
@@ -251,6 +253,20 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
     """)
     void createBelongsToRelationship(@Param("username") String username, @Param("groupName") String groupName);
 
+
+    @Query("""
+        MATCH (b:Blogger {instagram_id: $instagramId})
+        OPTIONAL MATCH (b)-[r:BELONGS_TO]->(:SeedGroup)
+        DELETE r
+        WITH b
+        SET b.seed_group = $groupName
+        WITH b
+        MERGE (g:SeedGroup {name: $groupName})
+        MERGE (b)-[:BELONGS_TO]->(g)
+    """)
+    void createBelongsToRelationshipByInstagramId(@Param("instagramId") Long instagramId, @Param("groupName") String groupName);
+
+
     /**
      * 直接修复博主的分组关系（删除旧关系并创建新关系，同时更新属性）
      */
@@ -307,61 +323,6 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         RETURN b
     """)
     Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup, @Param("seedReason") String seedReason);
-
-    /**
-     * 优化的 getOrCreateBloggerByInstagramId，增强了对改名情况的处理
-     * 1. 优先根据 instagramId 匹配，如果匹配到但用户名不同，会自动更新用户名（并删除旧用户名的占位节点）
-     * 2. 如果没有 instagramId 或没匹配到，退回使用 username 匹配
-     */
-    @Query("""
-        // 0. 预处理：查找可能存在的冲突节点
-        OPTIONAL MATCH (b_by_id:Blogger)
-        WHERE $instagramId IS NOT NULL AND b_by_id.instagram_id = $instagramId
-
-        OPTIONAL MATCH (b_by_name:Blogger {username: $username})
-
-        // 1. 解决冲突：如果 ID 匹配和 Name 匹配指向不同节点，删除 Name 匹配的那个（视为过时的或占位的）
-        FOREACH (_ IN CASE WHEN b_by_id IS NOT NULL AND b_by_name IS NOT NULL AND b_by_id <> b_by_name THEN [1] ELSE [] END |
-            DETACH DELETE b_by_name
-        )
-
-        // 2. 准备主节点：如果有 ID 匹配的（现在可能改名了），更新它的名字以便后续 MERGE 能够命中它
-        FOREACH (_ IN CASE WHEN b_by_id IS NOT NULL THEN [1] ELSE [] END |
-            SET b_by_id.username = $username
-        )
-
-        // 3. 标准 MERGE 流程 - 创建节点时记录是否新建
-        MERGE (b:Blogger {username: $username})
-        ON CREATE SET b.instagram_id = $instagramId
-
-        // 总是尝试设置 instagramId (如果原来是 null)
-        SET b.instagram_id = COALESCE(b.instagram_id, $instagramId)
-
-        WITH b
-        // 如果传入了 seedGroup 且不为空，则更新 seed_group 并建立 BELONGS_TO 关系
-        // 注意：这里不再检查 b.seed_group IS NULL，允许覆盖现有分组
-        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
-            SET b.seed_group = $seedGroup
-        )
-
-        // 建立分组关系（仅当 seedGroup 有值时才处理关系：删除旧的，建立新的）
-        // 使用 OPTIONAL MATCH + FOREACH 技巧来实现条件删除，避免 UNWIND 导致的流中断
-        OPTIONAL MATCH (b)-[oldRel:BELONGS_TO]->(:SeedGroup)
-        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' AND oldRel IS NOT NULL THEN [1] ELSE [] END |
-            DELETE oldRel
-        )
-
-        WITH b
-        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
-            MERGE (g:SeedGroup {name: $seedGroup})
-            MERGE (b)-[:BELONGS_TO]->(g)
-        )
-
-        RETURN b
-    """)
-    Optional<Blogger> getOrCreateBloggerOptimized(@Param("instagramId") Long instagramId, 
-                                                  @Param("username") String username, 
-                                                  @Param("seedGroup") String seedGroup);
 
     /**
      * 动态分页查询博主，并返回每个博主被标记的帖子数量

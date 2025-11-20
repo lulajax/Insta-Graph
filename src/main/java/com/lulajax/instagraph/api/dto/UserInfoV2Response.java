@@ -104,7 +104,7 @@ public class UserInfoV2Response extends BaseApiResponse {
         private Object latestBestiesReelMedia;
         @JsonProperty("reel_media_seen_timestamp")
         private Object reelMediaSeenTimestamp;
-        private String id;
+        private Long id;
         private String attempts;
     }
 

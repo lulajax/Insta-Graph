@@ -109,8 +109,7 @@ public class TaggedPostService {
                 logger.debug("处理帖子所有者: {}", ownerDto.getUsername());
                 Blogger owner = bloggerService.getOrCreateBloggerByInstagramId(
                     Long.parseLong(ownerDto.getId()), 
-                    ownerDto.getUsername(), 
-                    "default"
+                    ownerDto.getUsername()
                 );
                 // owner.getPosts().add(post);
                 // post.setOwner(owner);

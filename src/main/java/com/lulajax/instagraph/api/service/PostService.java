@@ -100,8 +100,7 @@ public class PostService {
                         logger.debug("处理被标记用户: {}", userDto.getUsername());
                         Blogger taggedBlogger = bloggerService.getOrCreateBloggerByInstagramId(
                             Long.parseLong(userDto.getId()), 
-                            userDto.getUsername(), 
-                            "default"
+                            userDto.getUsername()
                         );
                         // 更新fullName
                         if (userDto.getFullName() != null) {
@@ -123,8 +122,7 @@ public class PostService {
                         logger.debug("处理点赞用户: {}", likedByNode.getUsername());
                         Blogger liker = bloggerService.getOrCreateBloggerByInstagramId(
                             Long.parseLong(likedByNode.getId()), 
-                            likedByNode.getUsername(), 
-                            "default"
+                            likedByNode.getUsername()
                         );
                         // Manually update both sides of the relationship
                         // post.getLikedBy().add(liker);

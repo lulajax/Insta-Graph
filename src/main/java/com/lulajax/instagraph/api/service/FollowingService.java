@@ -65,8 +65,7 @@ public class FollowingService {
             for (FollowingResponse.FollowingItem item : items) {
                 Blogger followed = bloggerService.getOrCreateBloggerByInstagramId(
                     Long.parseLong(item.getId()), 
-                    item.getUsername(), 
-                    "default"
+                    item.getUsername()
                 );
                 // 更新额外信息
                 if (item.getFullName() != null) {

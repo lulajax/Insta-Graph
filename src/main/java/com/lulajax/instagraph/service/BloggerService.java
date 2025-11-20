@@ -26,18 +26,33 @@ public class BloggerService {
     @Transactional("transactionManager")
     public Blogger getOrCreateBlogger(String username) {
         // 使用优化后的 Cypher 查询，默认分组为 "default"
-        return bloggerRepository.getOrCreateBloggerOptimized(null, username, "default")
-                .orElseThrow(() -> new RuntimeException("无法处理博主: " + username));
+        return bloggerRepository.findByUsername(username).orElseGet(() -> {
+            Blogger blogger = new Blogger();
+            blogger.setUsername(username);
+            blogger.setSeedGroup("default");
+            Blogger savedBlogger = bloggerRepository.save(blogger);
+            bloggerRepository.createBelongsToRelationship(username, "default");
+            return savedBlogger;
+        });
     }
 
     /**
      * 通过 Instagram ID 获取或创建博主
      */
     @Transactional("transactionManager")
-    public Blogger getOrCreateBloggerByInstagramId(Long instagramId, String username, String seedGroup) {
+    public Blogger getOrCreateBloggerByInstagramId(Long instagramId, String username) {
         // 使用优化后的 Cypher 查询一次性完成查找、创建和关系更新
-        return bloggerRepository.getOrCreateBloggerOptimized(instagramId, username, seedGroup)
-                .orElseThrow(() -> new RuntimeException("无法处理博主: " + username));
+        return bloggerRepository.findByInstagramId(instagramId).orElseGet(() -> {
+            return bloggerRepository.findByUsername(username).orElseGet(() -> {
+                Blogger blogger = new Blogger();
+                blogger.setUsername(username);
+                blogger.setInstagramId(instagramId);
+                blogger.setSeedGroup("default");
+                Blogger savedBlogger = bloggerRepository.save(blogger);
+                bloggerRepository.createBelongsToRelationshipByInstagramId(instagramId, "default");
+                return savedBlogger;
+            });
+        });
     }
 }
 
