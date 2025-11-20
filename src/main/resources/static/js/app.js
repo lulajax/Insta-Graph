@@ -473,7 +473,7 @@ function renderEnhancedAnalysisResults(data) {
         const coTagPercent = (coTagScore / totalScore * 100).toFixed(1);
 
         return `
-            <div class="result-card" style="position: relative; overflow: visible;">
+            <div class="result-card" id="result-card-${item.username}" style="position: relative; overflow: visible;">
                 <div style="position: relative; z-index: 1;">
                     <!-- 头部：排名、用户名和综合评分 -->
                     <div class="result-header" style="margin-bottom: 20px;">
@@ -496,14 +496,14 @@ function renderEnhancedAnalysisResults(data) {
 
                     <!-- 评分维度明细 -->
                     <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
-                                padding: 15px; border-radius: 12px; margin-bottom: 15px;
+                                padding: 10px; border-radius: 12px; margin-bottom: 10px;
                                 border: 2px solid rgba(99, 102, 241, 0.2);">
-                        <div style="font-size: 0.875rem; font-weight: 600; color: var(--dark); margin-bottom: 8px;">
+                        <div style="font-size: 0.875rem; font-weight: 600; color: var(--dark); margin-bottom: 6px;">
                             📊 评分明细
                         </div>
                         <!-- 覆盖人数得分 -->
-                        <div style="margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div style="margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                                 <span style="font-size: 0.8rem; color: var(--dark);">
                                     🎯 <strong>覆盖人数</strong> (10分/人)
                                 </span>
@@ -511,21 +511,14 @@ function renderEnhancedAnalysisResults(data) {
                                     ${coverageScore.toFixed(1)} 分
                                 </span>
                             </div>
-                            <div style="background: var(--light-gray); height: 8px; border-radius: 4px; overflow: hidden;">
-                                <div style="background: linear-gradient(90deg, var(--primary), var(--secondary));
-                                            height: 100%; width: ${coveragePercent}%; transition: width 0.3s ease;"></div>
-                            </div>
-                            <div style="font-size: 0.7rem; color: var(--gray); margin-top: 2px;">
+                            <div style="font-size: 0.7rem; color: var(--gray); margin-top: 1px;">
                                 与 <a href="javascript:void(0)" onclick="showConnectedSeeds('${item.username}', '${document.getElementById('analysis-project').value}')" style="color: var(--primary); text-decoration: underline; cursor: pointer;">${item.connectedSeeds} 个种子</a>有连接
-                            </div>
-                            <div style="font-size: 0.7rem; color: var(--primary); margin-top: 2px; font-family: 'Courier New', monospace;">
-                                💡 计算：${item.connectedSeeds} 个 × 10 = ${coverageScore.toFixed(1)} 分
                             </div>
                         </div>
 
                         <!-- 共同标记得分 -->
-                        <div style="margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div style="margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                                 <span style="font-size: 0.8rem; color: var(--dark);">
                                     📌 <strong>共同标记</strong> (5分/次)
                                 </span>
@@ -533,30 +526,25 @@ function renderEnhancedAnalysisResults(data) {
                                     ${coTagScore.toFixed(1)} 分
                                 </span>
                             </div>
-                            <div style="background: var(--light-gray); height: 8px; border-radius: 4px; overflow: hidden;">
-                                <div style="background: linear-gradient(90deg, var(--success), #059669);
-                                            height: 100%; width: ${coTagPercent}%; transition: width 0.3s ease;"></div>
-                            </div>
-                            <div style="font-size: 0.7rem; color: var(--gray); margin-top: 2px;">
+                            <div style="font-size: 0.7rem; color: var(--gray); margin-top: 1px;">
                                 在 <a href="javascript:void(0)" onclick="showCoTaggedPosts('${item.username}', '${document.getElementById('analysis-project').value}')" style="color: var(--success); text-decoration: underline; cursor: pointer;">${item.coTaggedCount} 个帖子</a>中被共同标记
-                            </div>
-                            <div style="font-size: 0.7rem; color: var(--success); margin-top: 2px; font-family: 'Courier New', monospace;">
-                                💡 计算：${item.coTaggedCount} 次 × 5 = ${coTagScore.toFixed(1)} 分
                             </div>
                         </div>
                     </div>
 
                     <!-- 操作按钮 -->
-                    <button class="btn btn-sm btn-success"
-                            onclick="promoteToSeed('${item.username}')"
-                            style="width: 100%; margin-bottom: 8px;">
-                        🌱 晋升为种子博主
-                    </button>
-                    <button class="btn btn-sm"
-                            onclick="abandonBlogger('${item.username}')"
-                            style="width: 100%; background: var(--warning); color: white;">
-                        ⛔ 放弃此博主
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-sm btn-success"
+                                onclick="promoteToSeed('${item.username}')"
+                                style="flex: 1;">
+                            🌱 晋升
+                        </button>
+                        <button class="btn btn-sm"
+                                onclick="abandonBlogger('${item.username}')"
+                                style="flex: 1; background: var(--warning); color: white;">
+                            ⛔ 放弃
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -861,7 +849,7 @@ async function showPromoteDialog(username) {
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 500px;">
                 <div class="modal-header">
-                    <h3 style="margin: 0; color: var(--primary);">🌱 晋升种子博主</h3>
+                    <h3 style="margin: 0; color: var(--primary);">🌱 晋升种子</h3>
                 </div>
                 <div class="modal-body">
                     <p style="margin-bottom: 15px;">确定要将 <strong>@${username}</strong> 晋升为种子博主吗？</p>
@@ -948,6 +936,26 @@ async function promoteToSeed(username) {
 
         // 自动采集新种子的数据
         showToast('正在自动采集 @' + username + ' 的数据，这可能需要几分钟...', 'warning');
+        
+        // 从列表中移除该卡片，而不是刷新整个列表
+        const card = document.getElementById(`result-card-${username}`);
+        if (card) {
+            // card.style.transition = 'opacity 0.5s, transform 0.5s';
+            // card.style.opacity = '0';
+            // card.style.transform = 'scale(0.9)';
+            // setTimeout(() => {
+            //     card.remove();
+            //     // 更新计数
+            //     const countEl = document.getElementById('results-count');
+            //     if (countEl && state.currentAnalysisResults) {
+            //         state.currentAnalysisResults = state.currentAnalysisResults.filter(item => item.username !== username);
+            //         countEl.textContent = state.currentAnalysisResults.length + ' 个结果';
+            //     }
+            // }, 500);
+        } else if (document.getElementById('data-tab')?.classList.contains('active')) {
+            // 如果是在数据管理页面，则刷新列表
+            await loadBloggersPage();
+        }
 
         try {
             await aggregateUserData(username);
@@ -983,9 +991,21 @@ async function abandonBlogger(username) {
 
         showSuccess(`@${username} 已标记为放弃状态！`);
 
-        // 智能刷新：根据当前页面刷新分析结果或博主列表
-        if (document.getElementById('analysis-tab')?.classList.contains('active')) {
-            await runEnhancedAnalysis();
+        // 智能处理：如果是分析页面，直接移除卡片；如果是数据页面，刷新列表
+        const card = document.getElementById(`result-card-${username}`);
+        if (card && document.getElementById('analysis-tab')?.classList.contains('active')) {
+            // card.style.transition = 'opacity 0.5s, transform 0.5s';
+            // card.style.opacity = '0';
+            // card.style.transform = 'scale(0.9)';
+            // setTimeout(() => {
+            //     card.remove();
+            //     // 更新计数
+            //     const countEl = document.getElementById('results-count');
+            //     if (countEl && state.currentAnalysisResults) {
+            //         state.currentAnalysisResults = state.currentAnalysisResults.filter(item => item.username !== username);
+            //         countEl.textContent = state.currentAnalysisResults.length + ' 个结果';
+            //     }
+            // }, 500);
         } else if (document.getElementById('data-tab')?.classList.contains('active')) {
             await loadBloggersPage();
         }
