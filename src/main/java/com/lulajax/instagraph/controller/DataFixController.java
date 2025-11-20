@@ -19,33 +19,24 @@ public class DataFixController {
         this.dataFixService = dataFixService;
     }
 
-    @GetMapping("/check")
-    @Operation(
-        summary = "检查数据一致性", 
-        description = "检查 seed_group 属性和 BELONGS_TO 关系的一致性"
-    )
-    public ResponseEntity<Map<String, Object>> checkConsistency() {
-        Map<String, Object> report = dataFixService.checkDataConsistency();
-        return ResponseEntity.ok(report);
-    }
-
-    @GetMapping("/list-inconsistent")
-    @Operation(
-        summary = "列出所有不一致的博主",
-        description = "详细列出所有属性和关系不一致的博主信息"
-    )
-    public ResponseEntity<Map<String, Object>> listInconsistent() {
-        Map<String, Object> report = dataFixService.listInconsistentBloggers();
-        return ResponseEntity.ok(report);
-    }
 
     @PostMapping("/fix-relationships")
     @Operation(
-        summary = "修复分组关系",
-        description = "将所有博主的 seed_group 属性同步到 BELONGS_TO 关系"
+        summary = "修复分组关系（综合修复）",
+        description = "确保所有博主的 seed_group 属性和 BELONGS_TO 关系完全一致。以属性为准，自动同步关系。"
     )
     public ResponseEntity<Map<String, Object>> fixRelationships() {
         Map<String, Object> result = dataFixService.fixBloggerGroupRelationships();
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/diagnose-group-mismatch")
+    @Operation(
+        summary = "诊断分组统计不一致问题",
+        description = "比较通过 seed_group 属性和 BELONGS_TO 关系统计的博主数量，找出差异"
+    )
+    public ResponseEntity<Map<String, Object>> diagnoseGroupMismatch() {
+        Map<String, Object> result = dataFixService.diagnoseGroupCountMismatch();
         return ResponseEntity.ok(result);
     }
 }

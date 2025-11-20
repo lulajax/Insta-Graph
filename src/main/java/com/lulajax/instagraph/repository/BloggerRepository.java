@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -236,9 +237,13 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
     /**
      * 为指定博主创建 BELONGS_TO 关系到指定分组（同时更新属性）
      * 如果分组不存在，先创建分组节点
+     * 注意：会先删除已有的分组关系，确保一对一
      */
     @Query("""
         MATCH (b:Blogger {username: $username})
+        OPTIONAL MATCH (b)-[r:BELONGS_TO]->(:SeedGroup)
+        DELETE r
+        WITH b
         SET b.seed_group = $groupName
         WITH b
         MERGE (g:SeedGroup {name: $groupName})
@@ -268,13 +273,12 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
     @Query("""
         // 1. 创建或匹配博主节点
         MERGE (b:Blogger {username: $username})
-        ON CREATE SET b.seed_group = $seedGroup, b.seed_reason = $seedReason
 
         // 2. 如果博主已被放弃，自动恢复
         SET b.abandoned = CASE WHEN b.abandoned = true THEN false ELSE b.abandoned END,
             b.abandonedAt = CASE WHEN b.abandoned = true THEN null ELSE b.abandonedAt END,
             b.abandonedReason = CASE WHEN b.abandoned = true THEN null ELSE b.abandonedReason END
-        
+
         // 更新 seed_reason (如果提供了，非null)
         SET b.seed_reason = CASE WHEN $seedReason IS NOT NULL THEN $seedReason ELSE b.seed_reason END
 
@@ -283,18 +287,23 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
         OPTIONAL MATCH (b)-[oldRel:BELONGS_TO]->(:SeedGroup)
         DELETE oldRel
 
-        // 4. 使用 FOREACH 实现条件更新，避免作用域冲突
+        // 4. 使用 FOREACH 实现条件更新
         WITH b
         FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
             SET b.seed_group = $seedGroup
-            MERGE (g:SeedGroup {name: $seedGroup})
-            MERGE (b)-[:BELONGS_TO]->(g)
         )
         FOREACH (_ IN CASE WHEN $seedGroup IS NULL OR $seedGroup = '' THEN [1] ELSE [] END |
             SET b.seed_group = null
         )
 
-        // 5. 返回博主基本信息（不加载关系）
+        // 5. 建立新的 BELONGS_TO 关系（如果提供了有效的 seedGroup）
+        WITH b
+        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
+            MERGE (g:SeedGroup {name: $seedGroup})
+            MERGE (b)-[:BELONGS_TO]->(g)
+        )
+
+        // 6. 返回博主基本信息（不加载关系）
         RETURN b
     """)
     Optional<Blogger> addOrUpdateBloggerOptimized(@Param("username") String username, @Param("seedGroup") String seedGroup, @Param("seedReason") String seedReason);
@@ -306,36 +315,48 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
      */
     @Query("""
         // 0. 预处理：查找可能存在的冲突节点
-        OPTIONAL MATCH (b_by_id:Blogger) 
+        OPTIONAL MATCH (b_by_id:Blogger)
         WHERE $instagramId IS NOT NULL AND b_by_id.instagram_id = $instagramId
-        
+
         OPTIONAL MATCH (b_by_name:Blogger {username: $username})
-        
+
         // 1. 解决冲突：如果 ID 匹配和 Name 匹配指向不同节点，删除 Name 匹配的那个（视为过时的或占位的）
         FOREACH (_ IN CASE WHEN b_by_id IS NOT NULL AND b_by_name IS NOT NULL AND b_by_id <> b_by_name THEN [1] ELSE [] END |
             DETACH DELETE b_by_name
         )
-        
+
         // 2. 准备主节点：如果有 ID 匹配的（现在可能改名了），更新它的名字以便后续 MERGE 能够命中它
         FOREACH (_ IN CASE WHEN b_by_id IS NOT NULL THEN [1] ELSE [] END |
             SET b_by_id.username = $username
         )
-        
-        // 3. 标准 MERGE 流程
+
+        // 3. 标准 MERGE 流程 - 创建节点时记录是否新建
         MERGE (b:Blogger {username: $username})
-        ON CREATE SET b.seed_group = $seedGroup, b.instagram_id = $instagramId
-        
+        ON CREATE SET b.instagram_id = $instagramId
+
         // 总是尝试设置 instagramId (如果原来是 null)
         SET b.instagram_id = COALESCE(b.instagram_id, $instagramId)
-        
+
         WITH b
-        // 如果当前 seed_group 为空，且传入了 seed_group，则需要更新
-        FOREACH (_ IN CASE WHEN b.seed_group IS NULL AND $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
+        // 如果传入了 seedGroup 且不为空，则更新 seed_group 并建立 BELONGS_TO 关系
+        // 注意：这里不再检查 b.seed_group IS NULL，允许覆盖现有分组
+        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
             SET b.seed_group = $seedGroup
+        )
+
+        // 建立分组关系（仅当 seedGroup 有值时才处理关系：删除旧的，建立新的）
+        // 使用 OPTIONAL MATCH + FOREACH 技巧来实现条件删除，避免 UNWIND 导致的流中断
+        OPTIONAL MATCH (b)-[oldRel:BELONGS_TO]->(:SeedGroup)
+        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' AND oldRel IS NOT NULL THEN [1] ELSE [] END |
+            DELETE oldRel
+        )
+
+        WITH b
+        FOREACH (_ IN CASE WHEN $seedGroup IS NOT NULL AND $seedGroup <> '' THEN [1] ELSE [] END |
             MERGE (g:SeedGroup {name: $seedGroup})
             MERGE (b)-[:BELONGS_TO]->(g)
         )
-        
+
         RETURN b
     """)
     Optional<Blogger> getOrCreateBloggerOptimized(@Param("instagramId") Long instagramId, 
@@ -396,4 +417,111 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
 
     @Query("MATCH (blogger:Blogger {username: $username}), (post:Post {id: $postId}) MERGE (blogger)-[:TAGGED_IN]->(post)")
     void createTaggedInRelationship(@Param("username") String username, @Param("postId") String postId);
+
+    /**
+     * 修复所有缺失的 BELONGS_TO 关系
+     * 为所有有 seed_group 属性但没有 BELONGS_TO 关系的博主建立关系
+     * @return 修复的博主数量
+     */
+    @Query("""
+        MATCH (b:Blogger)
+        WHERE b.seed_group IS NOT NULL AND b.seed_group <> ''
+        AND NOT EXISTS((b)-[:BELONGS_TO]->(:SeedGroup))
+        WITH b
+        MERGE (g:SeedGroup {name: b.seed_group})
+        MERGE (b)-[:BELONGS_TO]->(g)
+        RETURN count(b) AS fixedCount
+    """)
+    long fixMissingBelongsToRelationships();
+
+    /**
+     * 修复属性为空或不一致的情况
+     * 从 BELONGS_TO 关系同步到 seed_group 属性
+     * @return 修复的博主数量
+     */
+    @Query("""
+        MATCH (b:Blogger)-[:BELONGS_TO]->(g:SeedGroup)
+        WHERE b.seed_group IS NULL OR b.seed_group = '' OR b.seed_group <> g.name
+        SET b.seed_group = g.name
+        RETURN count(b) AS fixedCount
+    """)
+    long syncPropertyFromRelationship();
+
+    /**
+     * 修复关系不一致的情况
+     * 当属性和关系都存在但不一致时，以属性为准，更新关系
+     * @return 修复的博主数量
+     */
+    @Query("""
+        MATCH (b:Blogger)-[r:BELONGS_TO]->(g:SeedGroup)
+        WHERE b.seed_group IS NOT NULL AND b.seed_group <> '' AND b.seed_group <> g.name
+        DELETE r
+        WITH b
+        MERGE (newG:SeedGroup {name: b.seed_group})
+        MERGE (b)-[:BELONGS_TO]->(newG)
+        RETURN count(b) AS fixedCount
+    """)
+    long fixInconsistentRelationships();
+
+    /**
+     * 综合修复所有不一致（一次性完成所有同步）
+     * 1. 先处理有属性但关系不正确的（删除旧关系，创建新关系）
+     * 2. 再处理有关系但属性不正确的（同步属性）
+     * 3. 最后处理只有属性没有关系的（创建关系）
+     * @return 修复统计
+     */
+    @Query("""
+        // 第1步：处理属性和关系都存在但不一致的（以属性为准）
+        MATCH (b:Blogger)-[r:BELONGS_TO]->(g:SeedGroup)
+        WHERE b.seed_group IS NOT NULL AND b.seed_group <> '' AND b.seed_group <> g.name
+        DELETE r
+        WITH count(b) AS inconsistentFixed
+
+        // 第2步：为所有有属性的博主确保有正确的关系
+        MATCH (b:Blogger)
+        WHERE b.seed_group IS NOT NULL AND b.seed_group <> ''
+        MERGE (g:SeedGroup {name: b.seed_group})
+        MERGE (b)-[:BELONGS_TO]->(g)
+        WITH inconsistentFixed, count(b) AS relationshipEnsured
+
+        // 第3步：同步有关系但属性为空或不一致的
+        MATCH (b:Blogger)-[:BELONGS_TO]->(g:SeedGroup)
+        WHERE b.seed_group IS NULL OR b.seed_group = '' OR b.seed_group <> g.name
+        SET b.seed_group = g.name
+        WITH inconsistentFixed, relationshipEnsured, count(b) AS propertySynced
+
+        RETURN inconsistentFixed, relationshipEnsured, propertySynced
+    """)
+    Map<String, Object> fixAllInconsistencies();
+
+    /**
+     * 诊断：比较属性统计和关系统计的差异
+     * 返回每个分组通过属性和关系统计的博主数量
+     * 仅返回有差异的分组
+     */
+    @Query("""
+        // 1. 获取所有可能的组名（来自 SeedGroup 节点 和 Blogger 属性）
+        MATCH (g:SeedGroup) WITH COLLECT(DISTINCT g.name) AS knownGroups
+        MATCH (b:Blogger) WHERE b.seed_group IS NOT NULL AND b.seed_group <> '' 
+        WITH knownGroups, COLLECT(DISTINCT b.seed_group) AS bloggerGroups
+        WITH knownGroups + bloggerGroups AS allGroups
+        UNWIND allGroups AS groupName
+        WITH DISTINCT groupName
+        
+        // 2. 统计
+        // 统计属性 (seed_group = groupName)
+        OPTIONAL MATCH (bProp:Blogger) WHERE bProp.seed_group = groupName
+        WITH groupName, count(bProp) AS propertyCount
+        
+        // 统计关系 (BELONGS_TO -> groupName)
+        OPTIONAL MATCH (bRel:Blogger)-[:BELONGS_TO]->(g:SeedGroup {name: groupName})
+        WITH groupName, propertyCount, count(bRel) AS relationshipCount
+        
+        // 3. 计算差异
+        WITH groupName, propertyCount, relationshipCount, (propertyCount - relationshipCount) AS difference
+        WHERE difference <> 0
+        RETURN groupName, propertyCount, relationshipCount, difference
+        ORDER BY abs(difference) DESC, groupName
+    """)
+    List<Map<String, Object>> diagnoseGroupCountMismatch();
 }

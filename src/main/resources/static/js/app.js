@@ -1038,7 +1038,7 @@ async function bulkAbandonBloggers() {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'API请求失败');
             }
-            
+
             successCount++;
         } catch (error) {
             failCount++;
@@ -1049,12 +1049,321 @@ async function bulkAbandonBloggers() {
     }
 
     showSuccess(`批量操作完成！成功 ${successCount} 个，失败 ${failCount} 个。`);
-    
+
     // 清空文本框
     document.getElementById('bulk-abandon-list').value = '';
 
     // 刷新博主列表
     await loadBloggersPage();
+}
+
+// 显示批量放弃对话框
+async function showBulkAbandonDialog() {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--warning);">⛔ 批量放弃博主</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 15px;">请输入要放弃的博主列表，每行一个用户名，后面可以跟上放弃原因（用空格隔开）。</p>
+                    <div class="form-group">
+                        <label class="form-label">博主列表</label>
+                        <textarea id="bulk-abandon-list-modal" class="form-input" rows="8" placeholder="每行一个用户名，后面可以跟上放弃原因，用空格隔开。例如：&#10;user1 内容不符&#10;user2 已联系无回应"></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove(); window.bulkAbandonDialogResolve(null);">
+                        取消
+                    </button>
+                    <button class="btn" style="background: var(--warning); color: white;"
+                            onclick="
+                                const list = document.getElementById('bulk-abandon-list-modal').value;
+                                this.closest('.modal-overlay').remove();
+                                window.bulkAbandonDialogResolve(list);
+                            ">
+                        确定批量放弃
+                    </button>
+                </div>
+            </div>
+        `;
+
+        window.bulkAbandonDialogResolve = async (list) => {
+            if (list && list.trim()) {
+                const lines = list.split('\n').filter(line => line.trim() !== '');
+                const total = lines.length;
+
+                const confirmed = await showConfirm(
+                    `确定要批量放弃 ${total} 个博主吗？<br><br>此操作将逐个处理，请耐心等待。`,
+                    '批量放弃确认',
+                    '⚠️'
+                );
+
+                if (!confirmed) {
+                    resolve(null);
+                    return;
+                }
+
+                let successCount = 0;
+                let failCount = 0;
+
+                for (let i = 0; i < total; i++) {
+                    const line = lines[i].trim();
+                    const parts = line.split(/\s+/);
+                    const username = parts.shift();
+                    const reason = parts.join(' ');
+
+                    if (!username) continue;
+
+                    try {
+                        showToast(`(${i + 1}/${total}) 正在放弃 @${username}...`, 'warning');
+                        const url = reason
+                            ? `/api/instagraph/blogger/${username}/abandon?reason=${encodeURIComponent(reason)}`
+                            : `/api/instagraph/blogger/${username}/abandon`;
+
+                        const response = await fetch(url, { method: 'PUT' });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'API请求失败');
+                        }
+
+                        successCount++;
+                    } catch (error) {
+                        failCount++;
+                        showError(`放弃 @${username} 失败: ${error.message}`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
+
+                showSuccess(`批量操作完成！成功 ${successCount} 个，失败 ${failCount} 个。`);
+
+                // 刷新博主列表
+                await loadBloggersPage();
+            }
+            resolve(null);
+        };
+
+        document.body.appendChild(modal);
+
+        // 聚焦到输入框
+        setTimeout(() => {
+            document.getElementById('bulk-abandon-list-modal')?.focus();
+        }, 100);
+
+        // 点击遮罩层关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        });
+    });
+}
+
+// 显示切换分组对话框
+async function showSwitchGroupDialog(username, currentGroup) {
+    const groups = Array.from(state.allProjects || []);
+
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+
+        const optionsHtml = `
+            <option value="">-- 未分组 --</option>
+            ${groups.map(group => {
+                const selected = group === currentGroup ? 'selected' : '';
+                return `<option value="${group}" ${selected}>${group}</option>`;
+            }).join('')}
+        `;
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--primary);">🔄 切换分组</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 12px; color: var(--gray);">
+                        为 <strong>@${username}</strong> 选择一个新的分组：
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label">目标分组</label>
+                        <select id="switch-group-select" class="form-select">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove(); window.switchGroupDialogResolve(null);">
+                        取消
+                    </button>
+                    <button class="btn btn-primary" onclick="
+                        (function() {
+                            const select = document.getElementById('switch-group-select');
+                            const newGroup = select ? select.value : '';
+                            const overlay = select.closest('.modal-overlay');
+                            if (overlay) overlay.remove();
+                            window.switchGroupDialogResolve(newGroup);
+                        })();
+                    ">
+                        确定切换
+                    </button>
+                </div>
+            </div>
+        `;
+
+        window.switchGroupDialogResolve = async (newGroup) => {
+            if (newGroup !== null) {
+                try {
+                    const response = await fetch('/api/instagraph/blogger', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: username,
+                            seedGroup: newGroup || null
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('更新失败');
+                    }
+
+                    showSuccess(`已将 @${username} 的分组更新为 ${newGroup || '未分组'}`);
+                    await loadBloggersPage();
+                } catch (error) {
+                    showError('更新分组失败：' + error.message);
+                    await loadBloggersPage();
+                }
+            }
+            resolve(null);
+        };
+
+        document.body.appendChild(modal);
+
+        setTimeout(() => {
+            document.getElementById('switch-group-select')?.focus();
+        }, 100);
+
+        // 点击遮罩层关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        });
+    });
+}
+
+// 从数据管理页面晋升为种子博主
+async function promoteToSeedFromDataTab(username) {
+    const groups = Array.from(state.allProjects || []);
+
+    if (groups.length === 0) {
+        showError('当前没有可用的分组，请先在"工作流程"中创建至少一个分组。');
+        return;
+    }
+
+    // 首先选择分组
+    const selectedGroup = await showGroupSelectDialogForPromote(username, groups);
+    if (!selectedGroup) return;
+
+    // 然后选择晋升原因
+    const seedReason = await showPromoteDialog(username);
+    if (seedReason === null) return;
+
+    try {
+        const response = await fetch('/api/instagraph/blogger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: username,
+                seedGroup: selectedGroup,
+                seedReason: seedReason
+            })
+        });
+
+        if (!response.ok) throw new Error('晋升失败');
+
+        showSuccess('@' + username + ' 已晋升为种子博主！');
+
+        // 自动采集新种子的数据
+        showToast('正在自动采集 @' + username + ' 的数据，这可能需要几分钟...', 'warning');
+
+        try {
+            await aggregateUserData(username);
+        } catch (aggError) {
+            console.error('自动采集数据失败:', aggError);
+            showError('自动采集 @' + username + ' 的数据失败：' + (aggError.message || '未知错误'));
+        }
+
+        // 刷新博主列表
+        await loadBloggersPage();
+    } catch (error) {
+        showError('晋升失败：' + error.message);
+    }
+}
+
+// 显示分组选择对话框（用于晋升）
+async function showGroupSelectDialogForPromote(username, groups) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+
+        const optionsHtml = groups.map(group => {
+            const stats = state.projectStats[group];
+            const seedCount = stats ? stats.bloggerCount : 0;
+            return `<option value="${group}">${group} (${seedCount} 个种子)</option>`;
+        }).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--primary);">选择目标分组</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 12px; color: var(--gray);">
+                        将 <strong>@${username}</strong> 晋升为种子博主，请选择目标分组：
+                    </p>
+                    <select id="promote-group-select" class="form-select">
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove(); window.promoteGroupDialogResolve(null);">
+                        取消
+                    </button>
+                    <button class="btn btn-primary" onclick="
+                        (function() {
+                            const select = document.getElementById('promote-group-select');
+                            const group = select ? select.value : '';
+                            const overlay = select.closest('.modal-overlay');
+                            if (overlay) overlay.remove();
+                            window.promoteGroupDialogResolve(group || null);
+                        })();
+                    ">
+                        下一步
+                    </button>
+                </div>
+            </div>
+        `;
+
+        window.promoteGroupDialogResolve = resolve;
+        document.body.appendChild(modal);
+
+        setTimeout(() => {
+            document.getElementById('promote-group-select')?.focus();
+        }, 100);
+
+        // 点击遮罩层关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        });
+    });
 }
 
 // 恢复博主
@@ -1777,7 +2086,7 @@ function renderBloggersTable(bloggerData) {
     const tbody = document.getElementById('bloggers-table-body');
 
     if (!bloggerData || bloggerData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">暂无数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="empty-state">暂无数据</td></tr>';
         return;
     }
 
@@ -1786,52 +2095,52 @@ function renderBloggersTable(bloggerData) {
         const blogger = data.blogger || data;
         const taggedPostCount = data.taggedPostCount !== undefined ? data.taggedPostCount : '-';
 
-        // 生成分组下拉选项
-        const groupOptions = `
-            <option value="">-- 未分组 --</option>
-            ${Array.from(state.allProjects).map(group =>
-                `<option value="${group}" ${blogger.seedGroup === group ? 'selected' : ''}>${group}</option>`
-            ).join('')}
-        `;
-
         // 状态显示和操作按钮
         const isAbandoned = blogger.abandoned === true;
         const statusDisplay = isAbandoned
             ? `<span style="color: var(--warning); cursor: help;" title="${blogger.abandonedReason ? '原因：' + blogger.abandonedReason : '已放弃'}">⛔ 已放弃</span>`
             : '<span style="color: var(--success);">✓ 活跃</span>';
 
-        const analysisButtons = `
-            <button class="btn btn-sm btn-outline" style="margin-right: 5px;" onclick="showConnectedSeedsFromDataTab('${blogger.username}', '${blogger.seedGroup || ''}')">共同连接</button>
-            <button class="btn btn-sm btn-outline" style="margin-right: 5px; margin-top: 4px;" onclick="showCoTaggedPostsFromDataTab('${blogger.username}', '${blogger.seedGroup || ''}')">共同帖子</button>
-        `;
+        // 种子组显示（显示文本而不是下拉框）
+        const seedGroupDisplay = blogger.seedGroup
+            ? `<span style="color: var(--primary); font-weight: 500;">${blogger.seedGroup}</span>`
+            : '<span style="color: var(--gray);">未分组</span>';
 
         const actionButtons = isAbandoned
-            ? `${analysisButtons}
-               <button class="btn btn-sm" style="background: #06b6d4; color: white; margin-right: 5px; font-weight: 500;" onclick="restoreBlogger('${blogger.username}')">♻️ 恢复</button>
-               <button class="btn btn-sm" style="background: var(--danger); color: white; font-weight: 500;" onclick="deleteBlogger('${blogger.username}')">删除</button>`
-            : `${analysisButtons}
-               <button class="btn btn-sm btn-primary" id="sync-btn-${blogger.username}" onclick="aggregateUserData('${blogger.username}')" style="margin-right: 5px; margin-top: 4px;">同步</button>
-               <button class="btn btn-sm" style="background: var(--warning); color: white; margin-right: 5px; margin-top: 4px;" onclick="abandonBlogger('${blogger.username}')">⛔ 放弃</button>
-               <button class="btn btn-sm" style="background: var(--danger); color: white; margin-top: 4px;" onclick="deleteBlogger('${blogger.username}')">删除</button>`;
+            ? `<div style="display: flex; flex-wrap: wrap; gap: 4px;">
+               <button class="btn btn-sm" style="background: #06b6d4; color: white; font-weight: 500;" onclick="restoreBlogger('${blogger.username}')">恢复</button>
+               <button class="btn btn-sm" style="background: var(--danger); color: white; font-weight: 500;" onclick="deleteBlogger('${blogger.username}')">删除</button>
+               </div>`
+            : `<div style="display: flex; flex-wrap: wrap; gap: 4px;">
+               <button class="btn btn-sm btn-success" onclick="promoteToSeedFromDataTab('${blogger.username}')" style="margin-right: 5px; margin-bottom: 4px;">晋升</button>
+               <button class="btn btn-sm btn-primary" onclick="showSwitchGroupDialog('${blogger.username}', '${blogger.seedGroup || ''}')" style="margin-right: 5px; margin-bottom: 4px;">切换分组</button>
+               <button class="btn btn-sm btn-primary" id="sync-btn-${blogger.username}" onclick="aggregateUserData('${blogger.username}')" style="margin-right: 5px; margin-bottom: 4px;">同步</button>
+               <button class="btn btn-sm" style="background: var(--warning); color: white; margin-right: 5px; margin-bottom: 4px;" onclick="abandonBlogger('${blogger.username}')">放弃</button>
+               <button class="btn btn-sm" style="background: var(--danger); color: white; margin-bottom: 4px;" onclick="deleteBlogger('${blogger.username}')">删除</button>
+               </div>`;
 
         return `
             <tr ${isAbandoned ? 'style="background-color: #fff8f0;"' : ''}>
                 <td><a href="https://www.instagram.com/${blogger.username}/" target="_blank" class="username-link">@${blogger.username}</a></td>
                 <td>${blogger.fullName || '-'}</td>
-                <td title="${blogger.bio || '-'}">${blogger.bio || '-'}</td>
-                <td>
-                    <select class="form-select" onchange="updateBloggerGroup('${blogger.username}', this.value)">
-                        ${groupOptions}
-                    </select>
-                </td>
+                <td>${seedGroupDisplay}</td>
                 <td>${statusDisplay}</td>
                 <td style="text-align: center; font-weight: 500;">
                     <a href="javascript:void(0)" onclick="showTaggedPostsForBlogger('${blogger.username}')" style="color: var(--primary); text-decoration: underline;">
                         ${taggedPostCount}
                     </a>
                 </td>
+                <td style="text-align: center;">
+                    <button class="btn btn-sm btn-outline" onclick="showConnectedSeedsFromDataTab('${blogger.username}', '${blogger.seedGroup || ''}')">查看</button>
+                </td>
+                <td style="text-align: center;">
+                    <button class="btn btn-sm btn-outline" onclick="showCoTaggedPostsFromDataTab('${blogger.username}', '${blogger.seedGroup || ''}')">查看</button>
+                </td>
                 <td>${blogger.instagramId || '-'}</td>
-                <td class="actions-cell">
+                <td style="white-space: nowrap;" title="${blogger.abandonedReason || '-'}">${blogger.abandonedReason ? (blogger.abandonedReason.length > 20 ? blogger.abandonedReason.substring(0, 20) + '...' : blogger.abandonedReason) : '-'}</td>
+                <td style="white-space: nowrap;" title="${blogger.seedReason || '-'}">${blogger.seedReason ? (blogger.seedReason.length > 20 ? blogger.seedReason.substring(0, 20) + '...' : blogger.seedReason) : '-'}</td>
+                <td style="white-space: nowrap;" title="${blogger.aggregationReason || '-'}">${blogger.aggregationReason ? (blogger.aggregationReason.length > 30 ? blogger.aggregationReason.substring(0, 30) + '...' : blogger.aggregationReason) : '-'}</td>
+                <td style="position: sticky; right: 0; background: ${isAbandoned ? '#fff8f0' : 'white'}; z-index: 5; box-shadow: -2px 0 4px rgba(0,0,0,0.05);">
                     ${actionButtons}
                 </td>
             </tr>

@@ -270,18 +270,10 @@
         <div id="data-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">批量操作</h2>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">批量放弃博主</label>
-                    <textarea id="bulk-abandon-list" class="form-input" rows="5" placeholder="每行一个用户名，后面可以跟上放弃原因，用空格隔开。例如：&#10;user1 内容不符&#10;user2 已联系无回应"></textarea>
-                </div>
-                <button class="btn" style="background: var(--warning); color: white;" onclick="bulkAbandonBloggers()">批量放弃</button>
-            </div>
-            <div class="card">
-                <div class="card-header">
                     <h2 class="card-title">所有博主</h2>
-                    <button class="btn btn-primary btn-sm" onclick="loadAllBloggers()">🔄 刷新</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary btn-sm" onclick="loadAllBloggers()">🔄 刷新</button>
+                    </div>
                 </div>
 
                 <!-- 筛选表单 -->
@@ -307,6 +299,11 @@
                     </div>
                 </div>
 
+                <!-- 批量操作按钮 -->
+                <div style="margin-bottom: 20px;">
+                    <button class="btn" style="background: var(--warning); color: white;" onclick="showBulkAbandonDialog()">⛔ 批量放弃博主</button>
+                </div>
+
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <span class="badge badge-primary" id="blogger-count">共 0 个博主</span>
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -320,23 +317,27 @@
                     </div>
                 </div>
 
-                <div class="table-container">
-                    <table>
+                <div class="table-container" style="overflow-x: auto; position: relative;">
+                    <table style="min-width: 1200px;">
                         <thead>
                             <tr>
-                                <th>用户名</th>
-                                <th>全名</th>
-                                <th>简介</th>
-                                <th>种子组</th>
-                                <th>状态</th>
-                                <th>被标记帖子数</th>
-                                <th>Instagram ID</th>
-                                <th>操作</th>
+                                <th style="min-width: 120px;">用户名</th>
+                                <th style="min-width: 100px;">全名</th>
+                                <th style="min-width: 100px;">种子组</th>
+                                <th style="min-width: 120px;">状态</th>
+                                <th style="min-width: 100px; text-align: center;">标记帖子</th>
+                                <th style="min-width: 100px; text-align: center;">共同连接</th>
+                                <th style="min-width: 100px; text-align: center;">共同帖子</th>
+                                <th style="min-width: 120px;">Instagram ID</th>
+                                <th style="min-width: 150px; white-space: nowrap;">放弃原因</th>
+                                <th style="min-width: 120px; white-space: nowrap;">晋升原因</th>
+                                <th style="min-width: 150px; white-space: nowrap;">采集说明</th>
+                                <th style="min-width: 280px; position: sticky; right: 0; background: white; z-index: 10; box-shadow: -2px 0 4px rgba(0,0,0,0.05);">操作</th>
                             </tr>
                         </thead>
                         <tbody id="bloggers-table-body">
                             <tr>
-                                <td colspan="8" class="empty-state">暂无数据</td>
+                                <td colspan="11" class="empty-state">暂无数据</td>
                             </tr>
                         </tbody>
                     </table>
