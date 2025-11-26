@@ -195,7 +195,7 @@ public interface BloggerRepository extends Neo4jRepository<Blogger, String> {
                seed_coverage AS seedCoverage,
                composite_score AS compositeScore
         ORDER BY composite_score DESC
-        LIMIT 100
+        LIMIT 300
     """)
     List<EnhancedAnalysisResult> findCoTaggedEnhanced(String project, int min_co_tags, double min_coverage);
 

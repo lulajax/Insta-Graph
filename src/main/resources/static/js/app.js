@@ -1189,6 +1189,145 @@ async function showBulkAbandonDialog() {
     });
 }
 
+// 显示批量晋升对话框
+async function showBulkPromoteDialog() {
+    const groups = Array.from(state.allProjects || []);
+
+    if (groups.length === 0) {
+        showToast('请先创建至少一个分组！', 'warning');
+        return;
+    }
+
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+
+        const groupOptionsHtml = groups.map(group =>
+            `<option value="${group}">${group}</option>`
+        ).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--success);">⬆️ 批量晋升博主</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 15px;">请选择目标分组，并输入要晋升的博主列表，每行一个用户名，后面可以跟上晋升原因（用空格隔开）。</p>
+                    <div class="form-group">
+                        <label class="form-label">目标分组</label>
+                        <select id="bulk-promote-group" class="form-select">
+                            ${groupOptionsHtml}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">博主列表</label>
+                        <textarea id="bulk-promote-list-modal" class="form-input" rows="8" placeholder="每行一个用户名，后面可以跟上晋升原因，用空格隔开。例如：&#10;user1 高质量内容创作者&#10;user2 活跃度高"></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove(); window.bulkPromoteDialogResolve(null);">
+                        取消
+                    </button>
+                    <button class="btn" style="background: var(--success); color: white;"
+                            onclick="
+                                const group = document.getElementById('bulk-promote-group').value;
+                                const list = document.getElementById('bulk-promote-list-modal').value;
+                                this.closest('.modal-overlay').remove();
+                                window.bulkPromoteDialogResolve({group, list});
+                            ">
+                        确定批量晋升
+                    </button>
+                </div>
+            </div>
+        `;
+
+        window.bulkPromoteDialogResolve = async (data) => {
+            if (data && data.list && data.list.trim()) {
+                const lines = data.list.split('\n').filter(line => line.trim() !== '');
+                const total = lines.length;
+
+                const confirmed = await showConfirm(
+                    `确定要将 ${total} 个博主晋升到分组 "${data.group}" 吗？<br><br>此操作将逐个处理，请耐心等待。`,
+                    '批量晋升确认',
+                    '⬆️'
+                );
+
+                if (!confirmed) {
+                    resolve(null);
+                    return;
+                }
+
+                let successCount = 0;
+                let failCount = 0;
+
+                for (let i = 0; i < total; i++) {
+                    const line = lines[i].trim();
+                    const parts = line.split(/\s+/);
+                    const username = parts.shift();
+                    const reason = parts.join(' ');
+
+                    if (!username) continue;
+
+                    try {
+                        showToast(`(${i + 1}/${total}) 正在晋升 @${username}...`, 'info');
+
+                        const response = await fetch('/api/instagraph/blogger', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: username,
+                                seedGroup: data.group,
+                                seedReason: reason || null
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'API请求失败');
+                        }
+
+                        successCount++;
+
+                        // 晋升成功后，自动加入采集队列
+                        try {
+                            await aggregateUserData(username);
+                        } catch (aggError) {
+                            console.error(`自动采集 @${username} 数据失败:`, aggError);
+                            showError(`@${username} 晋升成功，但自动采集失败: ${aggError.message}`);
+                        }
+                    } catch (error) {
+                        failCount++;
+                        showError(`晋升 @${username} 失败: ${error.message}`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
+
+                showSuccess(`批量操作完成！成功 ${successCount} 个，失败 ${failCount} 个。`);
+
+                // 刷新博主列表和任务队列状态
+                await loadBloggersPage();
+                await loadQueueStatus();
+            }
+            resolve(null);
+        };
+
+        document.body.appendChild(modal);
+
+        // 聚焦到输入框
+        setTimeout(() => {
+            document.getElementById('bulk-promote-list-modal')?.focus();
+        }, 100);
+
+        // 点击遮罩层关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(null);
+            }
+        });
+    });
+}
+
 // 显示切换分组对话框
 async function showSwitchGroupDialog(username, currentGroup) {
     const groups = Array.from(state.allProjects || []);
@@ -1324,8 +1463,9 @@ async function promoteToSeedFromDataTab(username) {
             showError('自动采集 @' + username + ' 的数据失败：' + (aggError.message || '未知错误'));
         }
 
-        // 刷新博主列表
+        // 刷新博主列表和任务队列状态
         await loadBloggersPage();
+        await loadQueueStatus();
     } catch (error) {
         showError('晋升失败：' + error.message);
     }
@@ -1732,7 +1872,10 @@ function renderCompletedTasks(tasks) {
         return;
     }
 
-    container.innerHTML = tasks.map(task => {
+    // 倒序排列，最新完成的在最前面
+    const sortedTasks = [...tasks].reverse();
+
+    container.innerHTML = sortedTasks.map(task => {
         const completedAt = new Date(task.completedAt).toLocaleString('zh-CN');
         const isSuccess = task.status === 'COMPLETED';
         const isFailed = task.status === 'FAILED';
